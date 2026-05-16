@@ -198,7 +198,6 @@ export default function App() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const chData = await chRes.json();
-      alert("Channels Response: " + JSON.stringify(chData));
       const channelId = chData.items?.[0]?.id;
       if (!channelId) {
         showToast("ما قدرنا نجيب الـ channel ID", "error");
@@ -209,7 +208,7 @@ export default function App() {
         part: "snippet",
         moderationStatus: "heldForReview",
         maxResults: "20",
-        channelId: channelId,
+        allThreadsRelatedToChannelId: channelId,
         ...(pageToken && { pageToken }),
       });
       const res = await fetch(`${YT_API}/commentThreads?${params}`, {
