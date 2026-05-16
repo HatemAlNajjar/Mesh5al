@@ -30,7 +30,7 @@ function SetupScreen({ clientId, setClientId, onLogin, gsiLoaded }) {
             <rect width="40" height="40" rx="12" fill="#FF0000"/>
             <path d="M16 13L28 20L16 27V13Z" fill="white"/>
           </svg>
-          <span className="setup-title">مشرف التعليقات</span>
+          <span className="setup-title">مشخال</span>
         </div>
         <p className="setup-subtitle">راجع تعليقات القناة وافق أو احذف أو احظر بنقرة واحدة</p>
 
@@ -273,7 +273,7 @@ export default function App() {
                 <rect width="40" height="40" rx="10" fill="#FF0000"/>
                 <path d="M16 13L28 20L16 27V13Z" fill="white"/>
               </svg>
-              <span className="header-title">مشرف التعليقات</span>
+              <span className="header-title">مشخال</span>
             </div>
             <div className="header-stats">
               {comments.length > 0 && <span className="badge-count">{comments.length} معلّق</span>}
