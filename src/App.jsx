@@ -204,6 +204,7 @@ export default function App() {
         setLoading(false);
         return;
       }
+      showToast("Channel ID: " + channelId, "success");
       const params = new URLSearchParams({
         part: "snippet",
         moderationStatus: "heldForReview",
