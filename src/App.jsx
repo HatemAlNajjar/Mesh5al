@@ -73,7 +73,7 @@ function SetupScreen({ clientId, setClientId, onLogin, gsiLoaded }) {
   );
 }
 
-function CommentCard({ comment, onAction }) {
+function CommentCard({ comment, onAction, videoTitle }) {
   const c = comment.snippet?.topLevelComment?.snippet || {};
   const threadId = comment.id;
   const commentId = comment.snippet?.topLevelComment?.id || threadId;
@@ -126,6 +126,10 @@ function CommentCard({ comment, onAction }) {
         )}
       </div>
 
+      {videoTitle && (
+        <p className="video-title-label">🎬 {videoTitle}</p>
+      )}
+
       <p className="comment-text" dangerouslySetInnerHTML={{ __html: text }} />
 
       {likes > 0 && <p className="comment-likes">👍 {likes}</p>}
@@ -156,6 +160,7 @@ export default function App() {
   const [nextPage, setNextPage] = useState(null);
   const [toast, setToast] = useState(null);
   const [gsiLoaded, setGsiLoaded] = useState(false);
+  const [videoTitles, setVideoTitles] = useState({});
   const tokenRef = useRef(null);
 
   useEffect(() => {
@@ -223,6 +228,17 @@ export default function App() {
       const items = data.items || [];
       setComments(prev => reset ? items : [...prev, ...items]);
       setNextPage(data.nextPageToken || null);
+      // Fetch video titles
+      const videoIds = [...new Set(items.map(i => i.snippet?.videoId).filter(Boolean))];
+      if (videoIds.length > 0) {
+        const vRes = await fetch(`${YT_API}/videos?part=snippet&id=${videoIds.join(",")}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const vData = await vRes.json();
+        const titles = {};
+        (vData.items || []).forEach(v => { titles[v.id] = v.snippet?.title || ""; });
+        setVideoTitles(prev => ({ ...prev, ...titles }));
+      }
     } catch (e) {
       showToast("خطأ في الاتصال بـ YouTube", "error");
     } finally {
@@ -302,7 +318,7 @@ export default function App() {
           ) : (
             <div className="cards-grid">
               {comments.map(c => (
-                <CommentCard key={c.id} comment={c} onAction={handleAction} />
+                <CommentCard key={c.id} comment={c} onAction={handleAction} videoTitle={videoTitles[c.snippet?.videoId]} />
               ))}
             </div>
           )}
@@ -380,6 +396,7 @@ const css = `
   .comment-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
   .video-link { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-muted); text-decoration: none; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); transition: color 0.2s; }
   .video-link:hover { color: var(--blue); border-color: var(--blue); }
+  .video-title-label { font-size: 0.75rem; color: var(--text-muted); margin-top: -6px; }
   .comment-text { font-size: 0.9rem; line-height: 1.7; color: #ccc; word-break: break-word; }
   .comment-likes { font-size: 0.78rem; color: var(--text-muted); }
   .actions { display: flex; gap: 8px; margin-top: 4px; }
