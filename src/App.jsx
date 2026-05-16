@@ -217,7 +217,7 @@ export default function App() {
       });
       const data = await res.json();
       if (data.error) {
-        showToast(data.error.message, "error");
+        showToast(JSON.stringify(data.error), "error");
         if (data.error.code === 401) setToken(null);
         return;
       }
