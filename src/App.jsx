@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const YT_API = "https://www.googleapis.com/youtube/v3";
-const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
+const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.readonly";
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
