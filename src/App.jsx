@@ -194,12 +194,10 @@ export default function App() {
   const fetchComments = async (accessToken, pageToken = null, reset = false) => {
     setLoading(true);
     try {
-      const channelId = "UCjpeVI764ZI_wez_6u7Ugng";
       const params = new URLSearchParams({
         part: "snippet",
         moderationStatus: "heldForReview",
         maxResults: "20",
-        channelId: channelId,
         ...(pageToken && { pageToken }),
       });
       const res = await fetch(`${YT_API}/commentThreads?${params}`, {
