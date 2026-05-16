@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const YT_API = "https://www.googleapis.com/youtube/v3";
-const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.readonly";
+const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -198,13 +198,13 @@ export default function App() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const chData = await chRes.json();
+      alert("Channels Response: " + JSON.stringify(chData));
       const channelId = chData.items?.[0]?.id;
       if (!channelId) {
         showToast("ما قدرنا نجيب الـ channel ID", "error");
         setLoading(false);
         return;
       }
-      showToast("Channel ID: " + channelId, "success");
       const params = new URLSearchParams({
         part: "snippet",
         moderationStatus: "heldForReview",
@@ -217,7 +217,7 @@ export default function App() {
       });
       const data = await res.json();
       if (data.error) {
-        showToast(JSON.stringify(data.error), "error");
+        showToast(data.error.message, "error");
         if (data.error.code === 401) setToken(null);
         return;
       }
