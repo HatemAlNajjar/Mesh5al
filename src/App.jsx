@@ -208,7 +208,7 @@ export default function App() {
         part: "snippet",
         moderationStatus: "heldForReview",
         maxResults: "20",
-        allThreadsRelatedToChannelId: channelId,
+        channelId: channelId,
         ...(pageToken && { pageToken }),
       });
       const res = await fetch(`${YT_API}/commentThreads?${params}`, {
