@@ -233,22 +233,14 @@ export default function App() {
   const handleAction = async (threadId, commentId, action) => {
     const t = tokenRef.current || token;
     try {
-      if (action === "delete") {
-        const res = await fetch(`${YT_API}/comments?id=${commentId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${t}` },
-        });
-        if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
-      } else {
-        const status = action === "approve" ? "published" : "rejected";
-        const banAuthor = action === "block" ? "true" : "false";
-        const params = new URLSearchParams({ id: threadId, moderationStatus: status, banAuthor });
-        const res = await fetch(`${YT_API}/comments/setModerationStatus?${params}`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${t}` },
-        });
-        if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
-      }
+      const status = action === "approve" ? "published" : "rejected";
+      const banAuthor = action === "block" ? "true" : "false";
+      const params = new URLSearchParams({ id: threadId, moderationStatus: status, banAuthor });
+      const res = await fetch(`${YT_API}/comments/setModerationStatus?${params}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
       const msgs = {
         approve: "✓ تمت الموافقة على التعليق",
         delete: "✕ تم حذف التعليق",
