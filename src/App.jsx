@@ -194,10 +194,21 @@ export default function App() {
   const fetchComments = async (accessToken, pageToken = null, reset = false) => {
     setLoading(true);
     try {
+      const chRes = await fetch(`${YT_API}/channels?part=id&mine=true`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const chData = await chRes.json();
+      const channelId = chData.items?.[0]?.id;
+      if (!channelId) {
+        showToast("ما قدرنا نجيب الـ channel ID", "error");
+        setLoading(false);
+        return;
+      }
       const params = new URLSearchParams({
         part: "snippet",
         moderationStatus: "heldForReview",
         maxResults: "20",
+        channelId: channelId,
         ...(pageToken && { pageToken }),
       });
       const res = await fetch(`${YT_API}/commentThreads?${params}`, {
