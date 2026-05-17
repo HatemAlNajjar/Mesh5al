@@ -464,6 +464,13 @@ export default function App() {
                     <p className="month-stat-num">{Number(channelInfo.views7Now).toLocaleString("ar")}</p>
                   </div>
                 </div>
+                <div className="month-stat-card">
+                  <div>
+                    <p className="month-stat-label">منذ آخر مقطع</p>
+                    <p className="month-stat-num">{recentVideos.length > 0 ? Math.floor((Date.now() - new Date(recentVideos[0].publishedAt)) / 86400000) : "—"} <span style={{fontSize:"1rem", fontWeight:400}}>يوم</span></p>
+                  </div>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.25"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                </div>
               </div>
               {recentVideos.length > 0 && (
                 <div className="recent-videos">
