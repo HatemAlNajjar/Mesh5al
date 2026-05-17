@@ -434,7 +434,12 @@ export default function App() {
                 <rect width="40" height="40" rx="10" fill="#FF0000"/>
                 <path d="M16 13L28 20L16 27V13Z" fill="white"/>
               </svg>
-              <span className="header-title">مشخال</span>
+              <div>
+                <span className="header-title">مشخال</span>
+                {recentVideos.length > 0 && (
+                  <p className="header-sub">آخر مقطع منذ {Math.floor((Date.now() - new Date(recentVideos[0].publishedAt)) / 86400000)} يوم</p>
+                )}
+              </div>
             </div>
             <div className="header-stats">
               {comments.length > 0 && <span className="badge-count">{comments.length} معلّق</span>}
@@ -451,27 +456,7 @@ export default function App() {
         <main className="main">
           {channelInfo && (
             <div className="dashboard">
-              <div className="stats-two-col">
-                <div className="month-stat-card">
-                  <div>
-                    <p className="month-stat-label">المشاهدات — آخر ٣٠ يوم</p>
-                    <p className="month-stat-num">{Number(channelInfo.views30Now).toLocaleString("ar")}</p>
-                  </div>
-                </div>
-                <div className="month-stat-card">
-                  <div>
-                    <p className="month-stat-label">المشاهدات — آخر ٧ أيام</p>
-                    <p className="month-stat-num">{Number(channelInfo.views7Now).toLocaleString("ar")}</p>
-                  </div>
-                </div>
-                <div className="month-stat-card">
-                  <div>
-                    <p className="month-stat-label">منذ آخر مقطع</p>
-                    <p className="month-stat-num">{recentVideos.length > 0 ? Math.floor((Date.now() - new Date(recentVideos[0].publishedAt)) / 86400000) : "—"} <span style={{fontSize:"1rem", fontWeight:400}}>يوم</span></p>
-                  </div>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.25"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                </div>
-              </div>
+
               {recentVideos.length > 0 && (
                 <div className="recent-videos">
                   <p className="section-label">آخر المقاطع</p>
@@ -561,6 +546,7 @@ const css = `
   .header-inner { max-width: 900px; margin: 0 auto; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
   .header-brand { display: flex; align-items: center; gap: 10px; }
   .header-title { font-size: 1.1rem; font-weight: 600; }
+  .header-sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
   .header-stats { display: flex; align-items: center; gap: 10px; }
   .badge-count { background: var(--red); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
   .refresh-btn, .logout-btn { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 12px; font-size: 0.82rem; font-family: inherit; cursor: pointer; transition: background 0.2s; }
