@@ -434,12 +434,12 @@ export default function App() {
                 <rect width="40" height="40" rx="10" fill="#FF0000"/>
                 <path d="M16 13L28 20L16 27V13Z" fill="white"/>
               </svg>
-              <div>
-                <span className="header-title">مشخال</span>
-                {recentVideos.length > 0 && (
-                  <p className="header-sub">آخر مقطع منذ {Math.floor((Date.now() - new Date(recentVideos[0].publishedAt)) / 86400000)} يوم</p>
-                )}
-              </div>
+              <span className="header-title">مشخال</span>
+            </div>
+            <div className="header-center">
+              {recentVideos.length > 0 && (
+                <span className="header-center-text">آخر مقطع منذ {Math.floor((Date.now() - new Date(recentVideos[0].publishedAt)) / 86400000)} يوم</span>
+              )}
             </div>
             <div className="header-stats">
               {comments.length > 0 && <span className="badge-count">{comments.length} معلّق</span>}
@@ -511,14 +511,17 @@ export default function App() {
 }
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap');
+  @font-face { font-family: 'Salma'; src: url('/fonts/Salma-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; }
+  @font-face { font-family: 'Salma'; src: url('/fonts/Salma-Medium.otf') format('opentype'); font-weight: 500; font-style: normal; }
+  @font-face { font-family: 'Salma'; src: url('/fonts/Salma-Light.otf') format('opentype'); font-weight: 300; font-style: normal; }
+  @font-face { font-family: 'Salma'; src: url('/fonts/Salma-Bold.otf') format('opentype'); font-weight: 700; font-style: normal; }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222;
     --border: #2a2a2a; --text: #e8e8e8; --text-muted: #777;
     --red: #ff0000; --green: #22c55e; --orange: #f97316; --blue: #3b82f6;
   }
-  body { font-family: 'IBM Plex Sans Arabic', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body { font-family: 'Salma', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
   .setup-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 24px; }
   .setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px; width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 24px; direction: rtl; }
@@ -543,10 +546,11 @@ const css = `
 
   .app { min-height: 100vh; display: flex; flex-direction: column; }
   .header { position: sticky; top: 0; z-index: 10; background: rgba(15,15,15,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-  .header-inner { max-width: 900px; margin: 0 auto; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-inner { max-width: 900px; margin: 0 auto; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; position: relative; }
   .header-brand { display: flex; align-items: center; gap: 10px; }
   .header-title { font-size: 1.1rem; font-weight: 600; }
-  .header-sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+  .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
+  .header-center-text { font-size: 1.05rem; font-weight: 600; color: var(--text); white-space: nowrap; }
   .header-stats { display: flex; align-items: center; gap: 10px; }
   .badge-count { background: var(--red); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
   .refresh-btn, .logout-btn { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 12px; font-size: 0.82rem; font-family: inherit; cursor: pointer; transition: background 0.2s; }
