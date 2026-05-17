@@ -511,10 +511,7 @@ export default function App() {
 }
 
 const css = `
-  @font-face { font-family: 'IBM Plex Sans Arabic'; src: url('/fonts/Salma-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; }
-  @font-face { font-family: 'IBM Plex Sans Arabic'; src: url('/fonts/Salma-Medium.otf') format('opentype'); font-weight: 500; font-style: normal; }
-  @font-face { font-family: 'IBM Plex Sans Arabic'; src: url('/fonts/Salma-Light.otf') format('opentype'); font-weight: 300; font-style: normal; }
-  @font-face { font-family: 'IBM Plex Sans Arabic'; src: url('/fonts/Salma-Bold.otf') format('opentype'); font-weight: 700; font-style: normal; }
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222;
