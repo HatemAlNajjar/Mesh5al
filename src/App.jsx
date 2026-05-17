@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 
 const YT_API = "https://www.googleapis.com/youtube/v3";
-const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
+const YT_ANALYTICS = "https://youtubeanalytics.googleapis.com/v2";
+const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly";
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -11,6 +12,20 @@ function timeAgo(dateStr) {
   if (hrs < 24) return `منذ ${hrs} ساعة`;
   const days = Math.floor(hrs / 24);
   return `منذ ${days} يوم`;
+}
+
+function DeltaBadge({ now, prev, label }) {
+  if (!prev && !now) return null;
+  const diff = now - prev;
+  const pct = prev > 0 ? Math.round((diff / prev) * 100) : null;
+  const isUp = diff >= 0;
+  return (
+    <div className={`delta-badge ${isUp ? "delta-up" : "delta-down"}`}>
+      <span>{isUp ? "▲" : "▼"}</span>
+      <span>{pct !== null ? `${Math.abs(pct)}%` : `${Math.abs(diff).toLocaleString("ar")}`}</span>
+      <span className="delta-label">{label}</span>
+    </div>
+  );
 }
 
 function SetupScreen({ clientId, setClientId, onLogin, gsiLoaded }) {
@@ -200,19 +215,69 @@ export default function App() {
 
   const fetchChannelData = async (accessToken, channelId) => {
     try {
-      const [statsRes, videosRes] = await Promise.all([
-        fetch(`${YT_API}/channels?part=snippet,statistics&id=${channelId}`, {
+      const today = new Date();
+      const fmt = d => d.toISOString().split("T")[0];
+      const monthStart = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+      const lastMonthStart = fmt(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+      const lastMonthEnd = fmt(new Date(today.getFullYear(), today.getMonth(), 0));
+      const todayStr = fmt(today);
+      const weekAgo = fmt(new Date(today - 7 * 86400000));
+      const twoWeeksAgo = fmt(new Date(today - 14 * 86400000));
+      const weekAgoPrev = fmt(new Date(today - 13 * 86400000));
+
+      // Fetch last 3 videos
+      const searchRes = await fetch(`${YT_API}/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=3`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const searchData = await searchRes.json();
+      const videoIds = (searchData.items || []).map(v => v.id.videoId).join(",");
+
+      // Fetch video stats + monthly analytics in parallel
+      const [vidStatsRes, monthNowRes, monthPrevRes, weekNowRes, weekPrevRes, vidWeekNowRes, vidWeekPrevRes] = await Promise.all([
+        fetch(`${YT_API}/videos?part=snippet,statistics&id=${videoIds}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_API}/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=3`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${monthStart}&endDate=${todayStr}&metrics=views`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${lastMonthStart}&endDate=${lastMonthEnd}&metrics=views`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${weekAgo}&endDate=${todayStr}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${twoWeeksAgo}&endDate=${weekAgoPrev}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
       ]);
-      const statsData = await statsRes.json();
-      const videosData = await videosRes.json();
-      if (statsData.items?.[0]) setChannelInfo(statsData.items[0]);
-      if (videosData.items) setRecentVideos(videosData.items);
-    } catch (e) {}
+
+      const [vidStatsData, monthNow, monthPrev, weekNow, weekPrev] = await Promise.all([
+        vidStatsRes.json(), monthNowRes.json(), monthPrevRes.json(), weekNowRes.json(), weekPrevRes.json(),
+      ]);
+
+      // Monthly views
+      const monthViews = monthNow.rows?.[0]?.[0] || 0;
+      const prevMonthViews = monthPrev.rows?.[0]?.[0] || 0;
+
+      // Per-video weekly views map
+      const weekNowMap = {};
+      const weekPrevMap = {};
+      (weekNow.rows || []).forEach(r => { weekNowMap[r[0]] = r[1]; });
+      (weekPrev.rows || []).forEach(r => { weekPrevMap[r[0]] = r[1]; });
+
+      const videos = (vidStatsData.items || []).map(v => ({
+        id: v.id,
+        title: v.snippet.title,
+        thumbnail: v.snippet.thumbnails?.medium?.url,
+        publishedAt: v.snippet.publishedAt,
+        totalViews: parseInt(v.statistics?.viewCount || 0),
+        weekViews: weekNowMap[v.id] || 0,
+        weekPrevViews: weekPrevMap[v.id] || 0,
+      }));
+
+      setChannelInfo({ monthViews, prevMonthViews });
+      setRecentVideos(videos);
+    } catch (e) { console.error(e); }
   };
 
   const login = () => {
@@ -348,29 +413,27 @@ export default function App() {
         <main className="main">
           {channelInfo && (
             <div className="dashboard">
-              <div className="stats-row">
-                <div className="stat-card">
-                  <span className="stat-num">{Number(channelInfo.statistics?.subscriberCount || 0).toLocaleString("ar")}</span>
-                  <span className="stat-label">مشترك</span>
+              <div className="month-stat-card">
+                <div>
+                  <p className="month-stat-label">مشاهدات هذا الشهر</p>
+                  <p className="month-stat-num">{Number(channelInfo.monthViews).toLocaleString("ar")}</p>
                 </div>
-                <div className="stat-card">
-                  <span className="stat-num">{Number(channelInfo.statistics?.viewCount || 0).toLocaleString("ar")}</span>
-                  <span className="stat-label">مشاهدة</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-num">{Number(channelInfo.statistics?.videoCount || 0).toLocaleString("ar")}</span>
-                  <span className="stat-label">مقطع</span>
-                </div>
+                <DeltaBadge now={channelInfo.monthViews} prev={channelInfo.prevMonthViews} label="عن الشهر الماضي" />
               </div>
               {recentVideos.length > 0 && (
                 <div className="recent-videos">
                   <p className="section-label">آخر المقاطع</p>
                   <div className="videos-row">
                     {recentVideos.map(v => (
-                      <a key={v.id.videoId} href={`https://youtube.com/watch?v=${v.id.videoId}`} target="_blank" rel="noreferrer" className="video-card">
-                        <img src={v.snippet.thumbnails?.medium?.url} alt="" className="video-thumb" />
-                        <p className="video-card-title">{v.snippet.title}</p>
-                        <p className="video-card-date">{new Date(v.snippet.publishedAt).toLocaleDateString("ar")}</p>
+                      <a key={v.id} href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer" className="video-card">
+                        <img src={v.thumbnail} alt="" className="video-thumb" />
+                        <div className="video-card-body">
+                          <p className="video-card-title">{v.title}</p>
+                          <div className="video-card-stats">
+                            <span className="video-stat-num">{Number(v.totalViews).toLocaleString("ar")} مشاهدة</span>
+                            <DeltaBadge now={v.weekViews} prev={v.weekPrevViews} label="الأسبوع الماضي" />
+                          </div>
+                        </div>
                       </a>
                     ))}
                   </div>
@@ -495,18 +558,23 @@ const css = `
   .toast-block { background: rgba(249,115,22,0.15); border-color: rgba(249,115,22,0.3); color: var(--orange); }
   .toast-error { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #ef4444; }
   @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
-  .dashboard { margin-bottom: 28px; display: flex; flex-direction: column; gap: 20px; }
-  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 4px; }
-  .stat-num { font-size: 1.4rem; font-weight: 700; color: var(--text); }
-  .stat-label { font-size: 0.78rem; color: var(--text-muted); }
-  .recent-videos { display: flex; flex-direction: column; gap: 12px; }
+  .dashboard { margin-bottom: 28px; display: flex; flex-direction: column; gap: 16px; }
+  .month-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .month-stat-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
+  .month-stat-num { font-size: 2rem; font-weight: 700; color: var(--text); }
+  .delta-badge { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; padding: 5px 10px; border-radius: 20px; white-space: nowrap; }
+  .delta-up { background: rgba(34,197,94,0.12); color: var(--green); }
+  .delta-down { background: rgba(239,68,68,0.12); color: #ef4444; }
+  .delta-label { color: var(--text-muted); font-size: 0.72rem; }
+  .recent-videos { display: flex; flex-direction: column; gap: 10px; }
   .section-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
   .videos-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; display: flex; flex-direction: column; }
   .video-card:hover { border-color: #444; }
   .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-  .video-card-title { font-size: 0.8rem; color: var(--text); padding: 8px 10px 4px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .video-card-date { font-size: 0.72rem; color: var(--text-muted); padding: 0 10px 8px; }
+  .video-card-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .video-card-title { font-size: 0.8rem; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .video-card-stats { display: flex; flex-direction: column; gap: 4px; }
+  .video-stat-num { font-size: 0.75rem; color: var(--text-muted); }
   @media (max-width: 600px) { .cards-grid { grid-template-columns: 1fr; } .header-inner { padding: 12px 16px; } .actions { flex-direction: row; } .btn { padding: 8px 0; font-size: 0.78rem; } }
 `;
