@@ -444,7 +444,6 @@ export default function App() {
                 </svg>
                 تحديث
               </button>
-              <button className="logout-btn" onClick={() => { setToken(null); tokenRef.current = null; setComments([]); }}>خروج</button>
             </div>
           </div>
         </header>
@@ -458,14 +457,12 @@ export default function App() {
                     <p className="month-stat-label">المشاهدات — آخر ٣٠ يوم</p>
                     <p className="month-stat-num">{Number(channelInfo.views30Now).toLocaleString("ar")}</p>
                   </div>
-                  <DeltaBadge now={channelInfo.views30Now} prev={channelInfo.views30PrevVal} label="عن الفترة السابقة" />
                 </div>
                 <div className="month-stat-card">
                   <div>
                     <p className="month-stat-label">المشاهدات — آخر ٧ أيام</p>
                     <p className="month-stat-num">{Number(channelInfo.views7Now).toLocaleString("ar")}</p>
                   </div>
-                  <DeltaBadge now={channelInfo.views7Now} prev={channelInfo.views7PrevVal} label="عن الأسبوع الماضي" />
                 </div>
               </div>
               {recentVideos.length > 0 && (
@@ -478,7 +475,6 @@ export default function App() {
                         <div className="video-card-body">
                           <div className="video-card-stats">
                             <span className="video-stat-num">{Number(v.totalViews).toLocaleString("ar")} مشاهدة</span>
-                            <DeltaBadge now={v.weekViews} prev={v.weekPrevViews} label="الأسبوع الماضي" />
                           </div>
                         </div>
                       </a>
@@ -616,13 +612,14 @@ const css = `
   .delta-label { color: var(--text-muted); font-size: 0.72rem; }
   .recent-videos { display: flex; flex-direction: column; gap: 10px; }
   .section-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
-  .videos-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .videos-row { display: flex; gap: 10px; }
+  .video-card { width: 120px; flex-shrink: 0; }
   .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; display: flex; flex-direction: column; }
   .video-card:hover { border-color: #444; }
   .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
   .video-card-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
   .video-card-title { font-size: 0.8rem; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .video-card-stats { display: flex; flex-direction: column; gap: 4px; }
-  .video-stat-num { font-size: 0.75rem; color: var(--text-muted); }
+  .video-stat-num { font-size: 0.88rem; color: var(--text); font-weight: 600; }
   @media (max-width: 600px) { .cards-grid { grid-template-columns: 1fr; } .header-inner { padding: 12px 16px; } .actions { flex-direction: row; } .btn { padding: 8px 0; font-size: 0.78rem; } }
 `;
