@@ -492,8 +492,8 @@ export default function App() {
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
               </svg>
-              <p className="empty-title">لا توجد تعليقات معلّقة</p>
-              <p className="empty-sub">كل شيء نظيف 👌</p>
+              <p className="empty-title">شخلت التعليقات بنجاح</p>
+              <p className="empty-sub">👌</p>
             </div>
           ) : (
             <div className="cards-grid">
