@@ -633,5 +633,19 @@ const css = `
   .last-video-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; }
   .last-video-label { font-size: 0.82rem; color: var(--text-muted); }
   .last-video-days { font-size: 1.3rem; font-weight: 700; color: var(--text); }
-  @media (max-width: 600px) { .cards-grid { grid-template-columns: 1fr; } .header-inner { padding: 12px 16px; } .actions { flex-direction: row; } .btn { padding: 8px 0; font-size: 0.78rem; } }
+  @media (max-width: 600px) {
+    .cards-grid { grid-template-columns: 1fr; }
+    .header-inner { padding: 12px 16px; }
+    .actions { flex-direction: row; }
+    .btn { padding: 8px 0; font-size: 0.78rem; }
+    .stats-two-col { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .month-stat-card { padding: 12px 10px; flex-direction: column; align-items: flex-start; gap: 4px; }
+    .month-stat-label { font-size: 0.65rem; }
+    .month-stat-num { font-size: 1.2rem; }
+    .videos-row { gap: 8px; }
+    .video-card { width: 100px; }
+    .video-stat-num { font-size: 0.75rem; }
+    .video-days-ago { font-size: 0.65rem; }
+    .video-card-body { padding: 6px; }
+  }
 `;
