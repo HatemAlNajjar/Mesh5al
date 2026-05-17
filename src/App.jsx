@@ -161,6 +161,8 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [gsiLoaded, setGsiLoaded] = useState(false);
   const [videoTitles, setVideoTitles] = useState({});
+  const [channelInfo, setChannelInfo] = useState(null);
+  const [recentVideos, setRecentVideos] = useState([]);
   const tokenRef = useRef(null);
 
   useEffect(() => {
@@ -183,6 +185,7 @@ export default function App() {
           setToken(res.access_token);
           tokenRef.current = res.access_token;
           fetchComments(res.access_token, null, true);
+          // will get channelId from fetchComments internally, so fetch after comments load
         }
       },
       error_callback: () => {},
@@ -193,6 +196,23 @@ export default function App() {
   const showToast = (text, type = "success") => {
     setToast({ text, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const fetchChannelData = async (accessToken, channelId) => {
+    try {
+      const [statsRes, videosRes] = await Promise.all([
+        fetch(`${YT_API}/channels?part=snippet,statistics&id=${channelId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        fetch(`${YT_API}/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=3`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+      ]);
+      const statsData = await statsRes.json();
+      const videosData = await videosRes.json();
+      if (statsData.items?.[0]) setChannelInfo(statsData.items[0]);
+      if (videosData.items) setRecentVideos(videosData.items);
+    } catch (e) {}
   };
 
   const login = () => {
@@ -206,6 +226,7 @@ export default function App() {
           setToken(res.access_token);
           tokenRef.current = res.access_token;
           fetchComments(res.access_token, null, true);
+          // will get channelId from fetchComments internally, so fetch after comments load
         } else {
           showToast("فشل تسجيل الدخول", "error");
         }
@@ -228,6 +249,7 @@ export default function App() {
         setLoading(false);
         return;
       }
+      if (reset) fetchChannelData(accessToken, channelId);
       const params = new URLSearchParams({
         part: "snippet",
         moderationStatus: "heldForReview",
@@ -324,6 +346,39 @@ export default function App() {
         </header>
 
         <main className="main">
+          {channelInfo && (
+            <div className="dashboard">
+              <div className="stats-row">
+                <div className="stat-card">
+                  <span className="stat-num">{Number(channelInfo.statistics?.subscriberCount || 0).toLocaleString("ar")}</span>
+                  <span className="stat-label">مشترك</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-num">{Number(channelInfo.statistics?.viewCount || 0).toLocaleString("ar")}</span>
+                  <span className="stat-label">مشاهدة</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-num">{Number(channelInfo.statistics?.videoCount || 0).toLocaleString("ar")}</span>
+                  <span className="stat-label">مقطع</span>
+                </div>
+              </div>
+              {recentVideos.length > 0 && (
+                <div className="recent-videos">
+                  <p className="section-label">آخر المقاطع</p>
+                  <div className="videos-row">
+                    {recentVideos.map(v => (
+                      <a key={v.id.videoId} href={`https://youtube.com/watch?v=${v.id.videoId}`} target="_blank" rel="noreferrer" className="video-card">
+                        <img src={v.snippet.thumbnails?.medium?.url} alt="" className="video-thumb" />
+                        <p className="video-card-title">{v.snippet.title}</p>
+                        <p className="video-card-date">{new Date(v.snippet.publishedAt).toLocaleDateString("ar")}</p>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {loading && comments.length === 0 ? (
             <div className="empty-state"><div className="spinner" /><p>جاري تحميل التعليقات...</p></div>
           ) : comments.length === 0 ? (
@@ -440,5 +495,18 @@ const css = `
   .toast-block { background: rgba(249,115,22,0.15); border-color: rgba(249,115,22,0.3); color: var(--orange); }
   .toast-error { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #ef4444; }
   @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  .dashboard { margin-bottom: 28px; display: flex; flex-direction: column; gap: 20px; }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 4px; }
+  .stat-num { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+  .stat-label { font-size: 0.78rem; color: var(--text-muted); }
+  .recent-videos { display: flex; flex-direction: column; gap: 12px; }
+  .section-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
+  .videos-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; display: flex; flex-direction: column; }
+  .video-card:hover { border-color: #444; }
+  .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+  .video-card-title { font-size: 0.8rem; color: var(--text); padding: 8px 10px 4px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .video-card-date { font-size: 0.72rem; color: var(--text-muted); padding: 0 10px 8px; }
   @media (max-width: 600px) { .cards-grid { grid-template-columns: 1fr; } .header-inner { padding: 12px 16px; } .actions { flex-direction: row; } .btn { padding: 8px 0; font-size: 0.78rem; } }
 `;
