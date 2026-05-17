@@ -168,7 +168,7 @@ function CommentCard({ comment, onAction, videoTitle }) {
 }
 
 export default function App() {
-  const [clientId, setClientId] = useState(() => localStorage.getItem("yt_client_id") || "");
+  const clientId = "931394071755-kkf5sd54udo748l2gnptjto5e41rf1t4.apps.googleusercontent.com";
   const [token, setToken] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -386,7 +386,9 @@ export default function App() {
     return (
       <>
         <style>{css}</style>
-        <SetupScreen clientId={clientId} setClientId={setClientId} onLogin={login} gsiLoaded={gsiLoaded} />
+        <div className="setup-screen">
+          <div className="spinner" />
+        </div>
       </>
     );
   }
