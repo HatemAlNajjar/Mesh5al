@@ -258,6 +258,8 @@ export default function App() {
         }),
       ]);
 
+      const rawDebug = await views30Res.clone().json().catch(() => ({}));
+      alert("Analytics 30d: " + JSON.stringify(rawDebug));
       const [vidStatsData, views30, views30Prev, views7, views7Prev, weekNow, weekPrev] = await Promise.all([
         vidStatsRes.json(), views30Res.json(), views30PrevRes.json(), views7Res.json(), views7PrevRes.json(), vidWeekNowRes.json(), vidWeekPrevRes.json(),
       ]);
