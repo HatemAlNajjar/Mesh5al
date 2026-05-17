@@ -238,22 +238,22 @@ export default function App() {
         fetch(`${YT_API}/videos?part=snippet,statistics&id=${videoIds}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days30ago}&endDate=${todayStr}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days30ago}&endDate=${todayStr}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days60ago}&endDate=${days31ago}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${days31ago}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days7ago}&endDate=${todayStr}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days7ago}&endDate=${todayStr}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days14ago}&endDate=${days8ago}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days14ago}&endDate=${days8ago}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days7ago}&endDate=${todayStr}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days7ago}&endDate=${todayStr}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days14ago}&endDate=${days8ago}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days14ago}&endDate=${days8ago}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
       ]);
