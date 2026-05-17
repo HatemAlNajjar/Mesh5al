@@ -171,6 +171,25 @@ export default function App() {
     return () => { try { document.head.removeChild(script); } catch {} };
   }, []);
 
+  // Auto-login silently when GSI loads and clientId is stored
+  useEffect(() => {
+    if (!gsiLoaded || !clientId.trim() || token) return;
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId.trim(),
+      scope: SCOPE,
+      prompt: "",
+      callback: (res) => {
+        if (res.access_token) {
+          setToken(res.access_token);
+          tokenRef.current = res.access_token;
+          fetchComments(res.access_token, null, true);
+        }
+      },
+      error_callback: () => {},
+    });
+    client.requestAccessToken();
+  }, [gsiLoaded]);
+
   const showToast = (text, type = "success") => {
     setToast({ text, type });
     setTimeout(() => setToast(null), 3000);
