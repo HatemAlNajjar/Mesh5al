@@ -175,6 +175,7 @@ export default function App() {
   const [nextPage, setNextPage] = useState(null);
   const [toast, setToast] = useState(null);
   const [gsiLoaded, setGsiLoaded] = useState(false);
+  const [loginPending, setLoginPending] = useState(false);
   const [videoTitles, setVideoTitles] = useState({});
   const [channelInfo, setChannelInfo] = useState(null);
   const [recentVideos, setRecentVideos] = useState([]);
@@ -382,12 +383,41 @@ export default function App() {
     }
   };
 
+  const manualLogin = () => {
+    if (!window.google?.accounts?.oauth2) return;
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: SCOPE,
+      callback: (res) => {
+        if (res.access_token) {
+          setToken(res.access_token);
+          tokenRef.current = res.access_token;
+          fetchComments(res.access_token, null, true);
+        }
+      },
+      error_callback: (err) => showToast(err?.message || "خطأ في المصادقة", "error"),
+    });
+    client.requestAccessToken();
+  };
+
   if (!token) {
     return (
       <>
         <style>{css}</style>
         <div className="setup-screen">
-          <div className="spinner" />
+          <div className="setup-card" style={{gap: "20px", alignItems: "center", maxWidth: "320px"}}>
+            <svg width="48" height="48" viewBox="0 0 40 40" fill="none">
+              <rect width="40" height="40" rx="12" fill="#FF0000"/>
+              <path d="M16 13L28 20L16 27V13Z" fill="white"/>
+            </svg>
+            <p style={{fontWeight: 600, fontSize: "1.2rem"}}>مشخال</p>
+            {loginPending
+              ? <div className="spinner" />
+              : <button className="login-btn" onClick={manualLogin} style={{width:"100%"}}>
+                  تسجيل الدخول بـ Google
+                </button>
+            }
+          </div>
         </div>
       </>
     );
