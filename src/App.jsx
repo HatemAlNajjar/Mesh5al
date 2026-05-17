@@ -475,6 +475,7 @@ export default function App() {
                         <div className="video-card-body">
                           <div className="video-card-stats">
                             <span className="video-stat-num">{Number(v.totalViews).toLocaleString("ar")} مشاهدة</span>
+                            <span className="video-days-ago">منذ {Math.floor((Date.now() - new Date(v.publishedAt)) / 86400000)} يوم</span>
                           </div>
                         </div>
                       </a>
@@ -621,5 +622,9 @@ const css = `
   .video-card-title { font-size: 0.8rem; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .video-card-stats { display: flex; flex-direction: column; gap: 4px; }
   .video-stat-num { font-size: 0.88rem; color: var(--text); font-weight: 600; }
+  .video-days-ago { font-size: 0.72rem; color: var(--text-muted); }
+  .last-video-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; }
+  .last-video-label { font-size: 0.82rem; color: var(--text-muted); }
+  .last-video-days { font-size: 1.3rem; font-weight: 700; color: var(--text); }
   @media (max-width: 600px) { .cards-grid { grid-template-columns: 1fr; } .header-inner { padding: 12px 16px; } .actions { flex-direction: row; } .btn { padding: 8px 0; font-size: 0.78rem; } }
 `;
