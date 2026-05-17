@@ -511,17 +511,17 @@ export default function App() {
 }
 
 const css = `
-  @font-face { font-family: 'Salma'; src: url('/fonts/Salma-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; }
-  @font-face { font-family: 'Salma'; src: url('/fonts/Salma-Medium.otf') format('opentype'); font-weight: 500; font-style: normal; }
-  @font-face { font-family: 'Salma'; src: url('/fonts/Salma-Light.otf') format('opentype'); font-weight: 300; font-style: normal; }
-  @font-face { font-family: 'Salma'; src: url('/fonts/Salma-Bold.otf') format('opentype'); font-weight: 700; font-style: normal; }
+  @font-face { font-family: 'IBM Plex Sans Arabic'; src: url('/fonts/Salma-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; }
+  @font-face { font-family: 'IBM Plex Sans Arabic'; src: url('/fonts/Salma-Medium.otf') format('opentype'); font-weight: 500; font-style: normal; }
+  @font-face { font-family: 'IBM Plex Sans Arabic'; src: url('/fonts/Salma-Light.otf') format('opentype'); font-weight: 300; font-style: normal; }
+  @font-face { font-family: 'IBM Plex Sans Arabic'; src: url('/fonts/Salma-Bold.otf') format('opentype'); font-weight: 700; font-style: normal; }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222;
     --border: #2a2a2a; --text: #e8e8e8; --text-muted: #777;
     --red: #ff0000; --green: #22c55e; --orange: #f97316; --blue: #3b82f6;
   }
-  body { font-family: 'Salma', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body { font-family: 'IBM Plex Sans Arabic', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
   .setup-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 24px; }
   .setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px; width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 24px; direction: rtl; }
