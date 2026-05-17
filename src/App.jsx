@@ -28,6 +28,17 @@ function DeltaBadge({ now, prev, label }) {
   );
 }
 
+function daysAgoAr(days) {
+  if (days === 1) return "منذ يوم";
+  if (days === 2) return "منذ يومين";
+  if (days >= 3 && days <= 10) {
+    const words = ["","","","ثلاثة","أربعة","خمسة","ستة","سبعة","ثمانية","تسعة","عشرة"];
+    return `منذ ${words[days]} أيام`;
+  }
+  if (days >= 11 && days <= 99) return `منذ ${days} يوماً`;
+  return `منذ ${days} يوم`;
+}
+
 function SetupScreen({ clientId, setClientId, onLogin, gsiLoaded }) {
   const steps = [
     { num: "١", text: "اذهب إلى", link: "https://console.cloud.google.com", label: "Google Cloud Console" },
@@ -438,7 +449,7 @@ export default function App() {
             </div>
             <div className="header-center">
               {recentVideos.length > 0 && (
-                <span className="header-center-text">آخر مقطع منذ {Math.floor((Date.now() - new Date(recentVideos[0].publishedAt)) / 86400000)} يوم</span>
+                <span className="header-center-text">آخر مقطع {daysAgoAr(Math.floor((Date.now() - new Date(recentVideos[0].publishedAt)) / 86400000))}</span>
               )}
             </div>
             <div className="header-stats">
@@ -467,7 +478,7 @@ export default function App() {
                         <div className="video-card-body">
                           <div className="video-card-stats">
                             <span className="video-stat-num">{Number(v.totalViews).toLocaleString("ar")} مشاهدة</span>
-                            <span className="video-days-ago">منذ {Math.floor((Date.now() - new Date(v.publishedAt)) / 86400000)} يوم</span>
+                            <span className="video-days-ago">{daysAgoAr(Math.floor((Date.now() - new Date(v.publishedAt)) / 86400000))}</span>
                           </div>
                         </div>
                       </a>
