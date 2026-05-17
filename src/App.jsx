@@ -217,13 +217,13 @@ export default function App() {
     try {
       const today = new Date();
       const fmt = d => d.toISOString().split("T")[0];
-      const monthStart = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
-      const lastMonthStart = fmt(new Date(today.getFullYear(), today.getMonth() - 1, 1));
-      const lastMonthEnd = fmt(new Date(today.getFullYear(), today.getMonth(), 0));
       const todayStr = fmt(today);
-      const weekAgo = fmt(new Date(today - 7 * 86400000));
-      const twoWeeksAgo = fmt(new Date(today - 14 * 86400000));
-      const weekAgoPrev = fmt(new Date(today - 13 * 86400000));
+      const days30ago = fmt(new Date(today - 30 * 86400000));
+      const days60ago = fmt(new Date(today - 60 * 86400000));
+      const days31ago = fmt(new Date(today - 31 * 86400000));
+      const days7ago  = fmt(new Date(today - 7  * 86400000));
+      const days14ago = fmt(new Date(today - 14 * 86400000));
+      const days8ago  = fmt(new Date(today - 8  * 86400000));
 
       // Fetch last 3 videos
       const searchRes = await fetch(`${YT_API}/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=3`, {
@@ -232,32 +232,39 @@ export default function App() {
       const searchData = await searchRes.json();
       const videoIds = (searchData.items || []).map(v => v.id.videoId).join(",");
 
-      // Fetch video stats + monthly analytics in parallel
-      const [vidStatsRes, monthNowRes, monthPrevRes, weekNowRes, weekPrevRes, vidWeekNowRes, vidWeekPrevRes] = await Promise.all([
+      // Fetch video stats + analytics in parallel
+      const [vidStatsRes, views30Res, views30PrevRes, views7Res, views7PrevRes, vidWeekNowRes, vidWeekPrevRes] = await Promise.all([
         fetch(`${YT_API}/videos?part=snippet,statistics&id=${videoIds}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${monthStart}&endDate=${todayStr}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days30ago}&endDate=${todayStr}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${lastMonthStart}&endDate=${lastMonthEnd}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days60ago}&endDate=${days31ago}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${weekAgo}&endDate=${todayStr}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days7ago}&endDate=${todayStr}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${twoWeeksAgo}&endDate=${weekAgoPrev}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days14ago}&endDate=${days8ago}&metrics=views`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days7ago}&endDate=${todayStr}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==MINE&startDate=${days14ago}&endDate=${days8ago}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
       ]);
 
-      const [vidStatsData, monthNow, monthPrev, weekNow, weekPrev] = await Promise.all([
-        vidStatsRes.json(), monthNowRes.json(), monthPrevRes.json(), weekNowRes.json(), weekPrevRes.json(),
+      const [vidStatsData, views30, views30Prev, views7, views7Prev, weekNow, weekPrev] = await Promise.all([
+        vidStatsRes.json(), views30Res.json(), views30PrevRes.json(), views7Res.json(), views7PrevRes.json(), vidWeekNowRes.json(), vidWeekPrevRes.json(),
       ]);
 
-      // Monthly views
-      const monthViews = monthNow.rows?.[0]?.[0] || 0;
-      const prevMonthViews = monthPrev.rows?.[0]?.[0] || 0;
+      const views30Now = views30.rows?.[0]?.[0] || 0;
+      const views30PrevVal = views30Prev.rows?.[0]?.[0] || 0;
+      const views7Now = views7.rows?.[0]?.[0] || 0;
+      const views7PrevVal = views7Prev.rows?.[0]?.[0] || 0;
 
       // Per-video weekly views map
       const weekNowMap = {};
@@ -275,7 +282,7 @@ export default function App() {
         weekPrevViews: weekPrevMap[v.id] || 0,
       }));
 
-      setChannelInfo({ monthViews, prevMonthViews });
+      setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal });
       setRecentVideos(videos);
     } catch (e) { console.error(e); }
   };
@@ -413,12 +420,21 @@ export default function App() {
         <main className="main">
           {channelInfo && (
             <div className="dashboard">
-              <div className="month-stat-card">
-                <div>
-                  <p className="month-stat-label">مشاهدات هذا الشهر</p>
-                  <p className="month-stat-num">{Number(channelInfo.monthViews).toLocaleString("ar")}</p>
+              <div className="stats-two-col">
+                <div className="month-stat-card">
+                  <div>
+                    <p className="month-stat-label">المشاهدات — آخر ٣٠ يوم</p>
+                    <p className="month-stat-num">{Number(channelInfo.views30Now).toLocaleString("ar")}</p>
+                  </div>
+                  <DeltaBadge now={channelInfo.views30Now} prev={channelInfo.views30PrevVal} label="عن الفترة السابقة" />
                 </div>
-                <DeltaBadge now={channelInfo.monthViews} prev={channelInfo.prevMonthViews} label="عن الشهر الماضي" />
+                <div className="month-stat-card">
+                  <div>
+                    <p className="month-stat-label">المشاهدات — آخر ٧ أيام</p>
+                    <p className="month-stat-num">{Number(channelInfo.views7Now).toLocaleString("ar")}</p>
+                  </div>
+                  <DeltaBadge now={channelInfo.views7Now} prev={channelInfo.views7PrevVal} label="عن الأسبوع الماضي" />
+                </div>
               </div>
               {recentVideos.length > 0 && (
                 <div className="recent-videos">
@@ -428,7 +444,6 @@ export default function App() {
                       <a key={v.id} href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer" className="video-card">
                         <img src={v.thumbnail} alt="" className="video-thumb" />
                         <div className="video-card-body">
-                          <p className="video-card-title">{v.title}</p>
                           <div className="video-card-stats">
                             <span className="video-stat-num">{Number(v.totalViews).toLocaleString("ar")} مشاهدة</span>
                             <DeltaBadge now={v.weekViews} prev={v.weekPrevViews} label="الأسبوع الماضي" />
@@ -559,6 +574,7 @@ const css = `
   .toast-error { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #ef4444; }
   @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
   .dashboard { margin-bottom: 28px; display: flex; flex-direction: column; gap: 16px; }
+  .stats-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .month-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
   .month-stat-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
   .month-stat-num { font-size: 2rem; font-weight: 700; color: var(--text); }
