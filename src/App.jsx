@@ -603,7 +603,7 @@ const css = `
   .toast-error { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #ef4444; }
   @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
   .dashboard { margin-bottom: 28px; display: flex; flex-direction: column; gap: 16px; }
-  .stats-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stats-two-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
   .month-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
   .month-stat-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
   .month-stat-num { font-size: 2rem; font-weight: 700; color: var(--text); }
