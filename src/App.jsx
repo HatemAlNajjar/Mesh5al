@@ -617,8 +617,8 @@ const css = `
   .delta-label { color: var(--text-muted); font-size: 0.72rem; }
   .recent-videos { display: flex; flex-direction: column; gap: 10px; }
   .section-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
-  .videos-row { display: flex; gap: 10px; }
-  .video-card { width: 120px; flex-shrink: 0; }
+  .videos-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .video-card { width: 100%; }
   .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; display: flex; flex-direction: column; }
   .video-card:hover { border-color: #444; }
   .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
