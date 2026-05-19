@@ -524,7 +524,6 @@ export default function App() {
           ) : (
             <>
               <div className="toolbar">
-                <span className="toolbar-count">{comments.length} تعليق معلّق</span>
                 <button className="btn-approve-all" onClick={handleApproveAll} disabled={approveAllLoading}>
                   {approveAllLoading
                     ? <div className="spinner spinner-sm" />
@@ -532,6 +531,7 @@ export default function App() {
                   }
                   الموافقة على الكل
                 </button>
+                <span className="toolbar-count">{comments.length} تعليق معلّق</span>
               </div>
               <div className="cards-grid">
                 {comments.map(c => (
