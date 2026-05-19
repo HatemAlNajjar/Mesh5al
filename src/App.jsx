@@ -680,8 +680,8 @@ const css = `
     .month-stat-card { padding: 12px 10px; flex-direction: column; align-items: flex-start; gap: 4px; }
     .month-stat-label { font-size: 0.65rem; }
     .month-stat-num { font-size: 1.2rem; }
-    .videos-row { gap: 8px; }
-    .video-card { width: 100px; }
+    .videos-row { gap: 8px; grid-template-columns: repeat(3, 1fr); }
+    .video-card { width: 100%; }
     .video-stat-num { font-size: 0.75rem; }
     .video-days-ago { font-size: 0.65rem; }
     .video-card-body { padding: 6px; }
