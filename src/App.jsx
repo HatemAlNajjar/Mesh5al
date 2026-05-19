@@ -667,7 +667,7 @@ const css = `
   .video-card-title { font-size: 0.8rem; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .video-card-stats { display: flex; flex-direction: column; gap: 4px; width: 100%; }
   .video-stat-num { font-size: 0.88rem; color: var(--text); font-weight: 600; display: block; width: 100%; text-align: center; }
-  .video-days-ago { font-size: 0.72rem; color: var(--text-muted); }
+  .video-days-ago { font-size: 0.72rem; color: var(--text-muted); display: block; width: 100%; text-align: center; }
   .last-video-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; }
   .last-video-label { font-size: 0.82rem; color: var(--text-muted); }
   .last-video-days { font-size: 1.3rem; font-weight: 700; color: var(--text); }
