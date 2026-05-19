@@ -190,6 +190,7 @@ export default function App() {
   const [videoTitles, setVideoTitles] = useState({});
   const [channelInfo, setChannelInfo] = useState(null);
   const [recentVideos, setRecentVideos] = useState([]);
+  const [approveAllLoading, setApproveAllLoading] = useState(false);
   const tokenRef = useRef(null);
 
   useEffect(() => {
@@ -371,6 +372,28 @@ export default function App() {
     }
   };
 
+  const handleApproveAll = async () => {
+    if (comments.length === 0 || approveAllLoading) return;
+    setApproveAllLoading(true);
+    const t = tokenRef.current || token;
+    const toApprove = [...comments];
+    let successCount = 0;
+    await Promise.all(toApprove.map(async (comment) => {
+      try {
+        const params = new URLSearchParams({ id: comment.id, moderationStatus: "published", banAuthor: "false" });
+        const res = await fetch(`${YT_API}/comments/setModerationStatus?${params}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${t}` },
+        });
+        if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
+        successCount++;
+      } catch {}
+    }));
+    setComments([]);
+    setApproveAllLoading(false);
+    showToast(`✓ تمت الموافقة على ${successCount} تعليق`, "success");
+  };
+
   const handleAction = async (threadId, commentId, action) => {
     const t = tokenRef.current || token;
     try {
@@ -499,11 +522,23 @@ export default function App() {
               <p className="empty-sub">👌</p>
             </div>
           ) : (
-            <div className="cards-grid">
-              {comments.map(c => (
-                <CommentCard key={c.id} comment={c} onAction={handleAction} videoTitle={videoTitles[c.snippet?.videoId]} />
-              ))}
-            </div>
+            <>
+              <div className="toolbar">
+                <span className="toolbar-count">{comments.length} تعليق معلّق</span>
+                <button className="btn-approve-all" onClick={handleApproveAll} disabled={approveAllLoading}>
+                  {approveAllLoading
+                    ? <div className="spinner spinner-sm" />
+                    : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                  }
+                  الموافقة على الكل
+                </button>
+              </div>
+              <div className="cards-grid">
+                {comments.map(c => (
+                  <CommentCard key={c.id} comment={c} onAction={handleAction} videoTitle={videoTitles[c.snippet?.videoId]} />
+                ))}
+              </div>
+            </>
           )}
 
           {nextPage && !loading && (
@@ -593,6 +628,12 @@ const css = `
   .btn-block { background: rgba(249,115,22,0.08); border-color: rgba(249,115,22,0.25); color: var(--orange); }
   .btn-block:hover { background: rgba(249,115,22,0.18); }
 
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .toolbar-count { font-size: 0.82rem; color: var(--text-muted); }
+  .btn-approve-all { display: flex; align-items: center; gap: 7px; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.35); color: var(--green); border-radius: 9px; padding: 8px 16px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-approve-all:hover:not(:disabled) { background: rgba(34,197,94,0.22); border-color: rgba(34,197,94,0.55); }
+  .btn-approve-all:disabled { opacity: 0.5; cursor: not-allowed; }
+  .spinner-sm { width: 14px; height: 14px; border-width: 2px; }
   .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: 300px; color: var(--text-muted); }
   .empty-title { font-size: 1.1rem; font-weight: 500; }
   .empty-sub { font-size: 0.9rem; }
