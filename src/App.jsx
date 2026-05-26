@@ -192,6 +192,9 @@ export default function App() {
   const [channelInfo, setChannelInfo] = useState(null);
   const [recentVideos, setRecentVideos] = useState([]);
   const [approveAllLoading, setApproveAllLoading] = useState(false);
+  const [videoCommentsModal, setVideoCommentsModal] = useState(null);
+  const [videoCommentsList, setVideoCommentsList] = useState([]);
+  const [videoCommentsLoading, setVideoCommentsLoading] = useState(false);
   const tokenRef = useRef(null);
 
   useEffect(() => {
@@ -320,6 +323,24 @@ export default function App() {
       error_callback: (err) => showToast(err?.message || "خطأ في المصادقة", "error"),
     });
     client.requestAccessToken();
+  };
+
+  const fetchVideoComments = async (videoId) => {
+    setVideoCommentsLoading(true);
+    setVideoCommentsList([]);
+    try {
+      const params = new URLSearchParams({ part: "snippet", videoId, order: "time", maxResults: "50" });
+      const res = await fetch(`${YT_API}/commentThreads?${params}`, {
+        headers: { Authorization: `Bearer ${tokenRef.current || token}` },
+      });
+      const data = await res.json();
+      if (data.error) { showToast(data.error.message, "error"); return; }
+      setVideoCommentsList(data.items || []);
+    } catch (e) {
+      showToast("خطأ في تحميل التعليقات", "error");
+    } finally {
+      setVideoCommentsLoading(false);
+    }
   };
 
   const fetchComments = async (accessToken, pageToken = null, reset = false) => {
@@ -496,15 +517,23 @@ export default function App() {
                   <p className="section-label">آخر المقاطع</p>
                   <div className="videos-row">
                     {recentVideos.map(v => (
-                      <a key={v.id} href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer" className="video-card">
-                        <img src={v.thumbnail} alt="" className="video-thumb" />
+                      <div key={v.id} className="video-card">
+                        <div className="video-thumb-wrap">
+                          <a href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer">
+                            <img src={v.thumbnail} alt="" className="video-thumb" />
+                          </a>
+                          <button className="video-comments-btn" onClick={() => { setVideoCommentsModal({ videoId: v.id, title: v.title }); fetchVideoComments(v.id); }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                            تعليقات
+                          </button>
+                        </div>
                         <div className="video-card-body">
                           <div className="video-card-stats">
                             <span className="video-stat-num">{Number(v.totalViews).toLocaleString("ar")}</span>
                             <span className="video-days-ago">{daysAgoAr(Math.floor((Date.now() - new Date(v.publishedAt)) / 86400000))}</span>
                           </div>
                         </div>
-                      </a>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -551,6 +580,44 @@ export default function App() {
         </main>
 
         {toast && <div className={`toast toast-${toast.type}`}>{toast.text}</div>}
+
+        {videoCommentsModal && (
+          <div className="vc-overlay" onClick={() => setVideoCommentsModal(null)}>
+            <div className="vc-sheet" onClick={e => e.stopPropagation()}>
+              <div className="vc-header">
+                <span className="vc-title">{videoCommentsModal.title || "تعليقات المقطع"}</span>
+                <button className="vc-close" onClick={() => setVideoCommentsModal(null)}>✕ إغلاق</button>
+              </div>
+              <div className="vc-list">
+                {videoCommentsLoading ? (
+                  <div className="vc-loading"><div className="spinner" /></div>
+                ) : videoCommentsList.length === 0 ? (
+                  <p className="vc-empty">لا توجد تعليقات</p>
+                ) : (
+                  videoCommentsList.map(item => {
+                    const s = item.snippet?.topLevelComment?.snippet || {};
+                    return (
+                      <div key={item.id} className="vc-comment">
+                        <div className="vc-author-row">
+                          {s.authorProfileImageUrl
+                            ? <img src={s.authorProfileImageUrl} alt="" className="vc-avatar" />
+                            : <div className="vc-avatar vc-avatar-ph">{(s.authorDisplayName || "؟")[0]}</div>
+                          }
+                          <div>
+                            <p className="vc-author">{s.authorDisplayName || "مجهول"}</p>
+                            <p className="vc-time">{s.publishedAt ? timeAgo(s.publishedAt) : ""}</p>
+                          </div>
+                        </div>
+                        <p className="vc-text" dangerouslySetInnerHTML={{ __html: s.textDisplay || "" }} />
+                        {s.likeCount > 0 && <p className="vc-likes">👍 {s.likeCount}</p>}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -664,7 +731,27 @@ const css = `
   .video-card { flex: 0 0 calc(33.333% - 7px); min-width: 0; }
   .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; display: flex; flex-direction: column; }
   .video-card:hover { border-color: #444; }
-  .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+  .video-thumb-wrap { position: relative; }
+  .video-thumb-wrap a { display: block; }
+  .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .video-comments-btn { position: absolute; bottom: 7px; right: 7px; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 8px; padding: 5px 9px; font-size: 0.7rem; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.15s; }
+  .video-comments-btn:hover { background: rgba(0,0,0,0.9); }
+  .vc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 200; display: flex; align-items: flex-end; }
+  .vc-sheet { background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; width: 100%; max-height: 75vh; display: flex; flex-direction: column; direction: rtl; }
+  .vc-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
+  .vc-title { font-size: 0.85rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vc-close { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 0.78rem; font-family: inherit; flex-shrink: 0; }
+  .vc-list { overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .vc-loading { display: flex; justify-content: center; padding: 32px; }
+  .vc-empty { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 32px; }
+  .vc-comment { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px; display: flex; flex-direction: column; gap: 7px; }
+  .vc-author-row { display: flex; align-items: center; gap: 9px; }
+  .vc-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+  .vc-avatar-ph { background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--text-muted); }
+  .vc-author { font-size: 0.8rem; font-weight: 600; color: var(--text); }
+  .vc-time { font-size: 0.68rem; color: var(--text-muted); }
+  .vc-text { font-size: 0.82rem; color: #ccc; line-height: 1.55; }
+  .vc-likes { font-size: 0.72rem; color: var(--text-muted); }
   .video-card-body { padding: 8px; display: flex; flex-direction: column; gap: 6px; width: 100%; }
   .video-card-title { font-size: 0.8rem; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .video-card-stats { display: flex; flex-direction: column; gap: 4px; width: 100%; }
