@@ -29,7 +29,8 @@ function DeltaBadge({ now, prev, label }) {
 }
 
 function daysAgoAr(days) {
-  if (days === 1) return "منذ يوم";
+  if (days === 0) return "اليوم";
+  if (days === 1) return "أمس";
   if (days === 2) return "منذ يومين";
   if (days >= 3 && days <= 10) {
     const words = ["","","","ثلاثة","أربعة","خمسة","ستة","سبعة","ثمانية","تسعة","عشرة"];
