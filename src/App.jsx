@@ -238,8 +238,8 @@ export default function App() {
       const days14ago = fmt(new Date(today - 14 * 86400000));
       const days8ago  = fmt(new Date(today - 8  * 86400000));
 
-      // Fetch last 3 videos
-      const searchRes = await fetch(`${YT_API}/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=3`, {
+      // Fetch last 10 videos
+      const searchRes = await fetch(`${YT_API}/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=10`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const searchData = await searchRes.json();
@@ -658,8 +658,9 @@ const css = `
   .delta-label { color: var(--text-muted); font-size: 0.72rem; }
   .recent-videos { display: flex; flex-direction: column; gap: 10px; }
   .section-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
-  .videos-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .video-card { width: 100%; }
+  .videos-row { display: flex; flex-direction: row; gap: 10px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4px; }
+  .videos-row::-webkit-scrollbar { display: none; }
+  .video-card { flex: 0 0 calc(33.333% - 7px); min-width: 0; }
   .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; display: flex; flex-direction: column; }
   .video-card:hover { border-color: #444; }
   .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
@@ -680,8 +681,8 @@ const css = `
     .month-stat-card { padding: 12px 10px; flex-direction: column; align-items: flex-start; gap: 4px; }
     .month-stat-label { font-size: 0.65rem; }
     .month-stat-num { font-size: 1.2rem; }
-    .videos-row { gap: 8px; grid-template-columns: repeat(3, 1fr); }
-    .video-card { width: 100%; }
+    .videos-row { gap: 8px; }
+    .video-card { flex: 0 0 calc(33.333% - 6px); }
     .video-stat-num { font-size: 0.75rem; }
     .video-days-ago { font-size: 0.65rem; }
     .video-card-body { padding: 6px; }
