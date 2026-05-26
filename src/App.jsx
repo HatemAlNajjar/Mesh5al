@@ -4,6 +4,22 @@ const YT_API = "https://www.googleapis.com/youtube/v3";
 const YT_ANALYTICS = "https://youtubeanalytics.googleapis.com/v2";
 const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly";
 
+const TOKEN_KEY = 'yt_access_token';
+const EXPIRY_KEY = 'yt_token_expiry';
+function saveToken(tok) {
+  localStorage.setItem(TOKEN_KEY, tok);
+  localStorage.setItem(EXPIRY_KEY, String(Date.now() + 3500 * 1000));
+}
+function loadToken() {
+  const tok = localStorage.getItem(TOKEN_KEY);
+  const exp = Number(localStorage.getItem(EXPIRY_KEY) || '0');
+  return tok && Date.now() < exp ? tok : null;
+}
+function clearStoredToken() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(EXPIRY_KEY);
+}
+
 function AppIcon({ size = 40 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
@@ -198,9 +214,9 @@ function CommentCard({ comment, onAction, videoTitle }) {
 
 export default function App() {
   const clientId = "931394071755-kkf5sd54udo748l2gnptjto5e41rf1t4.apps.googleusercontent.com";
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(() => loadToken());
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => !!loadToken());
   const [nextPage, setNextPage] = useState(null);
   const [toast, setToast] = useState(null);
   const [gsiLoaded, setGsiLoaded] = useState(false);
@@ -215,6 +231,14 @@ export default function App() {
   const [videoCommentsLoading, setVideoCommentsLoading] = useState(false);
   const [videoCommentsOrder, setVideoCommentsOrder] = useState("time");
   const tokenRef = useRef(null);
+
+  useEffect(() => {
+    const stored = loadToken();
+    if (stored) {
+      tokenRef.current = stored;
+      fetchComments(stored, null, true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -235,8 +259,8 @@ export default function App() {
         if (res.access_token) {
           setToken(res.access_token);
           tokenRef.current = res.access_token;
+          saveToken(res.access_token);
           fetchComments(res.access_token, null, true);
-          // will get channelId from fetchComments internally, so fetch after comments load
         }
       },
       error_callback: () => {},
@@ -333,8 +357,8 @@ export default function App() {
         if (res.access_token) {
           setToken(res.access_token);
           tokenRef.current = res.access_token;
+          saveToken(res.access_token);
           fetchComments(res.access_token, null, true);
-          // will get channelId from fetchComments internally, so fetch after comments load
         } else {
           showToast("فشل تسجيل الدخول", "error");
         }
@@ -396,7 +420,7 @@ export default function App() {
       const data = await res.json();
       if (data.error) {
         showToast(data.error.message, "error");
-        if (data.error.code === 401) setToken(null);
+        if (data.error.code === 401) { clearStoredToken(); setToken(null); }
         return;
       }
       const items = data.items || [];
@@ -474,6 +498,7 @@ export default function App() {
         if (res.access_token) {
           setToken(res.access_token);
           tokenRef.current = res.access_token;
+          saveToken(res.access_token);
           fetchComments(res.access_token, null, true);
         }
       },
