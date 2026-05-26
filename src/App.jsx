@@ -194,6 +194,7 @@ export default function App() {
   const [approveAllLoading, setApproveAllLoading] = useState(false);
   const [videoCommentsModal, setVideoCommentsModal] = useState(null);
   const [videoCommentsList, setVideoCommentsList] = useState([]);
+  const [videoCommentsTotal, setVideoCommentsTotal] = useState(null);
   const [videoCommentsLoading, setVideoCommentsLoading] = useState(false);
   const tokenRef = useRef(null);
 
@@ -328,14 +329,23 @@ export default function App() {
   const fetchVideoComments = async (videoId) => {
     setVideoCommentsLoading(true);
     setVideoCommentsList([]);
+    setVideoCommentsTotal(null);
     try {
-      const params = new URLSearchParams({ part: "snippet", videoId, order: "time", maxResults: "50" });
-      const res = await fetch(`${YT_API}/commentThreads?${params}`, {
-        headers: { Authorization: `Bearer ${tokenRef.current || token}` },
-      });
-      const data = await res.json();
-      if (data.error) { showToast(data.error.message, "error"); return; }
-      setVideoCommentsList(data.items || []);
+      const at = tokenRef.current || token;
+      let allItems = [];
+      let pageToken = null;
+      let total = null;
+      do {
+        const params = new URLSearchParams({ part: "snippet", videoId, order: "time", maxResults: "100", ...(pageToken && { pageToken }) });
+        const res = await fetch(`${YT_API}/commentThreads?${params}`, { headers: { Authorization: `Bearer ${at}` } });
+        const data = await res.json();
+        if (data.error) { showToast(data.error.message, "error"); return; }
+        if (total === null) total = data.pageInfo?.totalResults ?? null;
+        allItems = [...allItems, ...(data.items || [])];
+        setVideoCommentsList([...allItems]);
+        pageToken = data.nextPageToken || null;
+      } while (pageToken);
+      setVideoCommentsTotal(allItems.length);
     } catch (e) {
       showToast("خطأ في تحميل التعليقات", "error");
     } finally {
@@ -585,7 +595,15 @@ export default function App() {
           <div className="vc-overlay" onClick={() => setVideoCommentsModal(null)}>
             <div className="vc-sheet" onClick={e => e.stopPropagation()}>
               <div className="vc-header">
-                <span className="vc-title">{videoCommentsModal.title || "تعليقات المقطع"}</span>
+                <div className="vc-header-info">
+                  <span className="vc-title">{videoCommentsModal.title || "تعليقات المقطع"}</span>
+                  {!videoCommentsLoading && videoCommentsTotal !== null && (
+                    <span className="vc-count">{videoCommentsTotal.toLocaleString("ar")} تعليق</span>
+                  )}
+                  {videoCommentsLoading && videoCommentsList.length > 0 && (
+                    <span className="vc-count">{videoCommentsList.length.toLocaleString("ar")} تعليق جاري التحميل...</span>
+                  )}
+                </div>
                 <button className="vc-close" onClick={() => setVideoCommentsModal(null)}>✕ إغلاق</button>
               </div>
               <div className="vc-list">
@@ -739,7 +757,9 @@ const css = `
   .vc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 200; display: flex; align-items: flex-end; }
   .vc-sheet { background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; width: 100%; max-height: 75vh; display: flex; flex-direction: column; direction: rtl; }
   .vc-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
+  .vc-header-info { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
   .vc-title { font-size: 0.85rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vc-count { font-size: 0.72rem; color: var(--text-muted); }
   .vc-close { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 0.78rem; font-family: inherit; flex-shrink: 0; }
   .vc-list { overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
   .vc-loading { display: flex; justify-content: center; padding: 32px; }
