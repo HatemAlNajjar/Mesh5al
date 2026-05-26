@@ -4,6 +4,26 @@ const YT_API = "https://www.googleapis.com/youtube/v3";
 const YT_ANALYTICS = "https://youtubeanalytics.googleapis.com/v2";
 const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly";
 
+function AppIcon({ size = 40 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="9" fill="#111111"/>
+      <path d="M9.5 15.5L14.5 29H25.5L30.5 15.5Z" fill="#1e1e1e"/>
+      <path d="M9.5 15.5L14.5 29H25.5L30.5 15.5" fill="none" stroke="#d0d0d0" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round"/>
+      <line x1="14.5" y1="29" x2="25.5" y2="29" stroke="#d0d0d0" strokeWidth="1.6" strokeLinecap="round"/>
+      <rect x="6" y="12" width="28" height="3.5" rx="1.75" fill="#FF0000"/>
+      <circle cx="16" cy="19.5" r="1.4" fill="#FF0000"/>
+      <circle cx="20" cy="19.5" r="1.4" fill="#FF0000"/>
+      <circle cx="24" cy="19.5" r="1.4" fill="#FF0000"/>
+      <circle cx="14.8" cy="24" r="1.3" fill="#FF0000"/>
+      <circle cx="19.5" cy="24" r="1.3" fill="#FF0000"/>
+      <circle cx="24.2" cy="24" r="1.3" fill="#FF0000"/>
+      <circle cx="17" cy="27.8" r="1.1" fill="#FF0000"/>
+      <circle cx="21" cy="27.8" r="1.1" fill="#FF0000"/>
+    </svg>
+  );
+}
+
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -53,10 +73,7 @@ function SetupScreen({ clientId, setClientId, onLogin, gsiLoaded }) {
     <div className="setup-screen">
       <div className="setup-card">
         <div className="setup-logo">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <rect width="40" height="40" rx="12" fill="#FF0000"/>
-            <path d="M16 13L28 20L16 27V13Z" fill="white"/>
-          </svg>
+          <AppIcon size={40} />
           <span className="setup-title">مشخال</span>
         </div>
         <p className="setup-subtitle">راجع تعليقات القناة وافق أو احذف أو احظر بنقرة واحدة</p>
@@ -471,10 +488,7 @@ export default function App() {
         <style>{css}</style>
         <div className="setup-screen">
           <div className="setup-card" style={{gap: "20px", alignItems: "center", maxWidth: "320px"}}>
-            <svg width="48" height="48" viewBox="0 0 40 40" fill="none">
-              <rect width="40" height="40" rx="12" fill="#FF0000"/>
-              <path d="M16 13L28 20L16 27V13Z" fill="white"/>
-            </svg>
+            <AppIcon size={48} />
             <p style={{fontWeight: 600, fontSize: "1.2rem"}}>مشخال</p>
             {loginPending
               ? <div className="spinner" />
@@ -495,10 +509,7 @@ export default function App() {
         <header className="header">
           <div className="header-inner">
             <div className="header-brand">
-              <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-                <rect width="40" height="40" rx="10" fill="#FF0000"/>
-                <path d="M16 13L28 20L16 27V13Z" fill="white"/>
-              </svg>
+              <AppIcon size={28} />
               <span className="header-title">مشخال</span>
             </div>
             <div className="header-center">
