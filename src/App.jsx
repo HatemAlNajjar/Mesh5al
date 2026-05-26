@@ -528,18 +528,12 @@ export default function App() {
                   <div className="videos-row">
                     {recentVideos.map(v => (
                       <div key={v.id} className="video-card">
-                        <div className="video-thumb-wrap">
-                          <a href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer">
-                            <img src={v.thumbnail} alt="" className="video-thumb" />
-                          </a>
-                          <button className="video-comments-btn" onClick={() => { setVideoCommentsModal({ videoId: v.id, title: v.title }); fetchVideoComments(v.id); }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                            تعليقات
-                          </button>
-                        </div>
+                        <a href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer">
+                          <img src={v.thumbnail} alt="" className="video-thumb" />
+                        </a>
                         <div className="video-card-body">
                           <div className="video-card-stats">
-                            <span className="video-stat-num">{Number(v.totalViews).toLocaleString("ar")}</span>
+                            <button className="video-stat-num video-stat-link" onClick={() => { setVideoCommentsModal({ videoId: v.id, title: v.title }); fetchVideoComments(v.id); }}>{Number(v.totalViews).toLocaleString("ar")}</button>
                             <span className="video-days-ago">{daysAgoAr(Math.floor((Date.now() - new Date(v.publishedAt)) / 86400000))}</span>
                           </div>
                         </div>
@@ -749,11 +743,7 @@ const css = `
   .video-card { flex: 0 0 calc(33.333% - 7px); min-width: 0; }
   .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; text-decoration: none; transition: border-color 0.2s; display: flex; flex-direction: column; }
   .video-card:hover { border-color: #444; }
-  .video-thumb-wrap { position: relative; }
-  .video-thumb-wrap a { display: block; }
   .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
-  .video-comments-btn { position: absolute; bottom: 7px; right: 7px; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 8px; padding: 5px 9px; font-size: 0.7rem; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.15s; }
-  .video-comments-btn:hover { background: rgba(0,0,0,0.9); }
   .vc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 200; display: flex; align-items: flex-end; }
   .vc-sheet { background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; width: 100%; max-height: 75vh; display: flex; flex-direction: column; direction: rtl; }
   .vc-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
@@ -776,6 +766,8 @@ const css = `
   .video-card-title { font-size: 0.8rem; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .video-card-stats { display: flex; flex-direction: column; gap: 4px; width: 100%; }
   .video-stat-num { font-size: 0.88rem; color: var(--text); font-weight: 600; display: block; width: 100%; text-align: center; }
+  .video-stat-link { background: none; border: none; cursor: pointer; font-family: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(232,232,232,0.3); transition: color 0.15s, text-decoration-color 0.15s; }
+  .video-stat-link:hover { color: #fff; text-decoration-color: rgba(232,232,232,0.8); }
   .video-days-ago { font-size: 0.72rem; color: var(--text-muted); display: block; width: 100%; text-align: center; }
   .last-video-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; }
   .last-video-label { font-size: 0.82rem; color: var(--text-muted); }
