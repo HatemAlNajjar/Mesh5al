@@ -196,6 +196,7 @@ export default function App() {
   const [videoCommentsList, setVideoCommentsList] = useState([]);
   const [videoCommentsTotal, setVideoCommentsTotal] = useState(null);
   const [videoCommentsLoading, setVideoCommentsLoading] = useState(false);
+  const [videoCommentsOrder, setVideoCommentsOrder] = useState("time");
   const tokenRef = useRef(null);
 
   useEffect(() => {
@@ -326,7 +327,7 @@ export default function App() {
     client.requestAccessToken();
   };
 
-  const fetchVideoComments = async (videoId) => {
+  const fetchVideoComments = async (videoId, order = "time") => {
     setVideoCommentsLoading(true);
     setVideoCommentsList([]);
     setVideoCommentsTotal(null);
@@ -334,13 +335,11 @@ export default function App() {
       const at = tokenRef.current || token;
       let allItems = [];
       let pageToken = null;
-      let total = null;
       do {
-        const params = new URLSearchParams({ part: "snippet", videoId, order: "time", maxResults: "100", ...(pageToken && { pageToken }) });
+        const params = new URLSearchParams({ part: "snippet", videoId, order, maxResults: "100", ...(pageToken && { pageToken }) });
         const res = await fetch(`${YT_API}/commentThreads?${params}`, { headers: { Authorization: `Bearer ${at}` } });
         const data = await res.json();
         if (data.error) { showToast(data.error.message, "error"); return; }
-        if (total === null) total = data.pageInfo?.totalResults ?? null;
         allItems = [...allItems, ...(data.items || [])];
         setVideoCommentsList([...allItems]);
         pageToken = data.nextPageToken || null;
@@ -533,7 +532,7 @@ export default function App() {
                         </a>
                         <div className="video-card-body">
                           <div className="video-card-stats">
-                            <button className="video-stat-num video-stat-link" onClick={() => { setVideoCommentsModal({ videoId: v.id, title: v.title }); fetchVideoComments(v.id); }}>{Number(v.totalViews).toLocaleString("ar")}</button>
+                            <button className="video-stat-num video-stat-link" onClick={() => { setVideoCommentsOrder("time"); setVideoCommentsModal({ videoId: v.id, title: v.title }); fetchVideoComments(v.id, "time"); }}>{Number(v.totalViews).toLocaleString("ar")}</button>
                             <span className="video-days-ago">{daysAgoAr(Math.floor((Date.now() - new Date(v.publishedAt)) / 86400000))}</span>
                           </div>
                         </div>
@@ -599,6 +598,16 @@ export default function App() {
                   )}
                 </div>
                 <button className="vc-close" onClick={() => setVideoCommentsModal(null)}>✕ إغلاق</button>
+              </div>
+              <div className="vc-sort-bar">
+                {[{ key: "time", label: "الأحدث" }, { key: "relevance", label: "الأكثر تفاعلاً" }].map(opt => (
+                  <button
+                    key={opt.key}
+                    className={`vc-sort-btn${videoCommentsOrder === opt.key ? " vc-sort-active" : ""}`}
+                    disabled={videoCommentsLoading}
+                    onClick={() => { setVideoCommentsOrder(opt.key); fetchVideoComments(videoCommentsModal.videoId, opt.key); }}
+                  >{opt.label}</button>
+                ))}
               </div>
               <div className="vc-list">
                 {videoCommentsLoading ? (
@@ -751,6 +760,11 @@ const css = `
   .vc-title { font-size: 0.85rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .vc-count { font-size: 0.72rem; color: var(--text-muted); }
   .vc-close { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 0.78rem; font-family: inherit; flex-shrink: 0; }
+  .vc-sort-bar { display: flex; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; direction: rtl; }
+  .vc-sort-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 20px; padding: 5px 14px; font-size: 0.78rem; font-family: inherit; cursor: pointer; transition: all 0.15s; }
+  .vc-sort-btn:hover:not(:disabled) { border-color: #555; color: var(--text); }
+  .vc-sort-active { background: var(--red) !important; border-color: var(--red) !important; color: #fff !important; }
+  .vc-sort-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .vc-list { overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
   .vc-loading { display: flex; justify-content: center; padding: 32px; }
   .vc-empty { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 32px; }
