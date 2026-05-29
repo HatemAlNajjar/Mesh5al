@@ -408,6 +408,12 @@ export default function App() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const chData = await chRes.json();
+      if (chData.error) {
+        showToast(chData.error.message || "خطأ في YouTube API", "error");
+        if (chData.error.code === 401) { clearStoredToken(); setToken(null); tokenRef.current = null; }
+        setLoading(false);
+        return;
+      }
       const channelId = chData.items?.[0]?.id;
       if (!channelId) {
         showToast("ما قدرنا نجيب الـ channel ID", "error");
