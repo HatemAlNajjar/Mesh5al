@@ -195,6 +195,7 @@ export default function App() {
   const [videoCommentsOrder, setVideoCommentsOrder] = useState("time");
   const tokenRef = useRef(null);
   const swRef = useRef(null);
+  const knownIdsRef = useRef(new Set());
   const [notifEnabled, setNotifEnabled] = useState(() => localStorage.getItem('notif_enabled') === 'true');
 
   useEffect(() => {
@@ -257,17 +258,55 @@ export default function App() {
   useEffect(() => {
     if (!notifEnabled) return;
     const ids = comments.map(c => c.id);
+    knownIdsRef.current = new Set(ids);
     idbSave('knownIds', ids);
     swRef.current?.active?.postMessage({ type: 'SAVE_KNOWN_IDS', ids });
   }, [comments, notifEnabled]);
 
+  const checkForNewComments = async () => {
+    const t = tokenRef.current;
+    if (!t || Notification.permission !== 'granted') return;
+    try {
+      const chRes = await fetch(`${YT_API}/channels?part=id&mine=true`, {
+        headers: { Authorization: `Bearer ${t}` }
+      });
+      const chData = await chRes.json();
+      const channelId = chData.items?.[0]?.id;
+      if (!channelId) return;
+      const params = new URLSearchParams({
+        part: 'snippet',
+        moderationStatus: 'heldForReview',
+        maxResults: '50',
+        allThreadsRelatedToChannelId: channelId,
+      });
+      const res = await fetch(`${YT_API}/commentThreads?${params}`, {
+        headers: { Authorization: `Bearer ${t}` }
+      });
+      const data = await res.json();
+      if (data.error) return;
+      const items = data.items || [];
+      const newOnes = items.filter(i => !knownIdsRef.current.has(i.id));
+      if (newOnes.length > 0) {
+        new Notification('مشخال 🎬', {
+          body: newOnes.length === 1
+            ? 'تعليق جديد معلّق للمراجعة'
+            : `${newOnes.length} تعليقات جديدة معلّقة للمراجعة`,
+          icon: '/Mesh5al/icon-192.png',
+          dir: 'rtl',
+          lang: 'ar',
+          tag: 'pending-comments',
+        });
+      }
+      knownIdsRef.current = new Set(items.map(i => i.id));
+      idbSave('knownIds', items.map(i => i.id));
+    } catch {}
+  };
+
   useEffect(() => {
     if (!notifEnabled || !token) return;
-    const tid = setInterval(() => {
-      if (swRef.current?.active) swRef.current.active.postMessage({ type: 'CHECK_NOW' });
-    }, 5 * 60 * 1000);
+    const tid = setInterval(checkForNewComments, 3 * 60 * 1000);
     return () => clearInterval(tid);
-  }, [notifEnabled, token]);
+  }, [notifEnabled, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showToast = (text, type = "success") => {
     setToast({ text, type });
@@ -284,12 +323,14 @@ export default function App() {
     if (reg && 'periodicSync' in reg) {
       try { await reg.periodicSync.register('check-comments', { minInterval: 5 * 60 * 1000 }); } catch {}
     }
-    if (comments.length > 0) {
-      const ids = comments.map(c => c.id);
+    const ids = comments.map(c => c.id);
+    knownIdsRef.current = new Set(ids);
+    if (ids.length > 0) {
       idbSave('knownIds', ids);
       reg?.active?.postMessage({ type: 'SAVE_KNOWN_IDS', ids });
     }
     showToast('✓ سيتم إرسال إشعارات عند وجود تعليقات جديدة', 'success');
+    setTimeout(checkForNewComments, 1500);
   };
 
   const disableNotifications = async () => {
