@@ -76,62 +76,6 @@ function daysAgoAr(days) {
   return `منذ ${days} يوم`;
 }
 
-function SetupScreen({ clientId, setClientId, onLogin, gsiLoaded }) {
-  const steps = [
-    { num: "١", text: "اذهب إلى", link: "https://console.cloud.google.com", label: "Google Cloud Console" },
-    { num: "٢", text: "أنشئ مشروعاً جديداً أو اختر مشروعاً قائماً" },
-    { num: "٣", text: 'فعّل "YouTube Data API v3" من قسم APIs & Services' },
-    { num: "٤", text: 'أنشئ بيانات OAuth 2.0 → نوع "Web Application"' },
-    { num: "٥", text: "أضف", code: "https://<username>.github.io", suffix: "ضمن Authorized JavaScript origins" },
-  ];
-
-  return (
-    <div className="setup-screen">
-      <div className="setup-card">
-        <div className="setup-logo">
-          <AppIcon size={40} />
-          <span className="setup-title">مشخال</span>
-        </div>
-        <p className="setup-subtitle">راجع تعليقات القناة وافق أو احذف أو احظر بنقرة واحدة</p>
-
-        <div className="steps">
-          <p className="steps-label">الإعداد مرة واحدة فقط</p>
-          {steps.map((s, i) => (
-            <div key={i} className="step-row">
-              <span className="step-num">{s.num}</span>
-              <span className="step-text">
-                {s.text}{" "}
-                {s.link && <a href={s.link} target="_blank" rel="noreferrer" className="step-link">{s.label}</a>}
-                {s.code && <code className="step-code">{s.code}</code>}
-                {s.suffix && " " + s.suffix}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="input-group">
-          <label className="input-label">OAuth Client ID</label>
-          <input
-            className="client-input"
-            type="text"
-            placeholder="123456789-abc...apps.googleusercontent.com"
-            value={clientId}
-            onChange={e => setClientId(e.target.value)}
-            dir="ltr"
-          />
-        </div>
-
-        <button
-          className={`login-btn ${(!clientId.trim() || !gsiLoaded) ? "disabled" : ""}`}
-          onClick={onLogin}
-          disabled={!clientId.trim() || !gsiLoaded}
-        >
-          {!gsiLoaded ? "جاري التحضير..." : "تسجيل الدخول بـ Google"}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function CommentCard({ comment, onAction, videoTitle }) {
   const c = comment.snippet?.topLevelComment?.snippet || {};
@@ -345,27 +289,6 @@ export default function App() {
       setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal });
       setRecentVideos(videos);
     } catch (e) { console.error(e); }
-  };
-
-  const login = () => {
-    if (!window.google?.accounts?.oauth2) return;
-    localStorage.setItem("yt_client_id", clientId.trim());
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: clientId.trim(),
-      scope: SCOPE,
-      callback: (res) => {
-        if (res.access_token) {
-          setToken(res.access_token);
-          tokenRef.current = res.access_token;
-          saveToken(res.access_token);
-          fetchComments(res.access_token, null, true);
-        } else {
-          showToast("فشل تسجيل الدخول", "error");
-        }
-      },
-      error_callback: (err) => showToast(err?.message || "خطأ في المصادقة", "error"),
-    });
-    client.requestAccessToken();
   };
 
   const fetchVideoComments = async (videoId, order = "time") => {
