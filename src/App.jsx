@@ -8,7 +8,7 @@ const TOKEN_KEY = 'yt_access_token';
 const EXPIRY_KEY = 'yt_token_expiry';
 function saveToken(tok) {
   localStorage.setItem(TOKEN_KEY, tok);
-  localStorage.setItem(EXPIRY_KEY, String(Date.now() + 28800 * 1000));
+  localStorage.setItem(EXPIRY_KEY, String(Date.now() + 604800 * 1000));
 }
 function loadToken() {
   const tok = localStorage.getItem(TOKEN_KEY);
