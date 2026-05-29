@@ -287,7 +287,7 @@ export default function App() {
       const items = data.items || [];
       const newOnes = items.filter(i => !knownIdsRef.current.has(i.id));
       if (newOnes.length > 0) {
-        new Notification('مشخال 🎬', {
+        const notifOpts = {
           body: newOnes.length === 1
             ? 'تعليق جديد معلّق للمراجعة'
             : `${newOnes.length} تعليقات جديدة معلّقة للمراجعة`,
@@ -295,7 +295,15 @@ export default function App() {
           dir: 'rtl',
           lang: 'ar',
           tag: 'pending-comments',
-        });
+        };
+        // Use SW notification (required on iOS PWA), fall back to direct API
+        if (swRef.current) {
+          swRef.current.showNotification('مشخال 🎬', notifOpts).catch(() => {
+            new Notification('مشخال 🎬', notifOpts);
+          });
+        } else {
+          new Notification('مشخال 🎬', notifOpts);
+        }
       }
       knownIdsRef.current = new Set(items.map(i => i.id));
       idbSave('knownIds', items.map(i => i.id));
