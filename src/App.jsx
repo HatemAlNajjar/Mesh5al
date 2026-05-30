@@ -819,12 +819,12 @@ const css = `
 
   .app { min-height: 100vh; display: flex; flex-direction: column; }
   .header { position: sticky; top: 0; z-index: 10; background: rgba(15,15,15,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-  .header-inner { max-width: 900px; margin: 0 auto; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; position: relative; }
-  .header-brand { display: flex; align-items: center; gap: 10px; }
+  .header-inner { max-width: 900px; margin: 0 auto; padding: 16px 20px; display: flex; align-items: center; }
+  .header-brand { flex: 1; display: flex; align-items: center; gap: 10px; }
   .header-title { font-size: 1.1rem; font-weight: 600; }
-  .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
-  .header-center-text { font-size: 1.05rem; font-weight: 600; color: var(--text); white-space: nowrap; }
-  .header-stats { display: flex; align-items: center; gap: 10px; }
+  .header-center { flex: 0 1 auto; text-align: center; padding: 0 8px; overflow: hidden; }
+  .header-center-text { font-size: 1.05rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-stats { flex: 1; display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
   .badge-count { background: var(--red); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
   .refresh-btn, .logout-btn { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 12px; font-size: 0.82rem; font-family: inherit; cursor: pointer; transition: background 0.2s; }
   .refresh-btn:hover, .logout-btn:hover { background: var(--surface2); }
