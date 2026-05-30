@@ -255,7 +255,7 @@ export default function App() {
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${days31ago}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days7ago}&endDate=${todayStr}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days7ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days14ago}&endDate=${days8ago}&metrics=views`, {
@@ -270,13 +270,13 @@ export default function App() {
         fetch(`${YT_API}/channels?part=statistics&id=${channelId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${todayStr}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days120ago}&endDate=${days61ago}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days90ago}&endDate=${todayStr}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days90ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days180ago}&endDate=${days91ago}&metrics=views`, {
@@ -302,6 +302,21 @@ export default function App() {
       const comments30 = views30.rows?.[0]?.[3] || 0;
       const subsGained30 = views30.rows?.[0]?.[4] || 0;
       const subsLost30 = views30.rows?.[0]?.[5] || 0;
+      const minutesWatched7 = views7.rows?.[0]?.[1] || 0;
+      const likes7 = views7.rows?.[0]?.[2] || 0;
+      const comments7 = views7.rows?.[0]?.[3] || 0;
+      const subsGained7 = views7.rows?.[0]?.[4] || 0;
+      const subsLost7 = views7.rows?.[0]?.[5] || 0;
+      const minutesWatched60 = views60.rows?.[0]?.[1] || 0;
+      const likes60 = views60.rows?.[0]?.[2] || 0;
+      const comments60 = views60.rows?.[0]?.[3] || 0;
+      const subsGained60 = views60.rows?.[0]?.[4] || 0;
+      const subsLost60 = views60.rows?.[0]?.[5] || 0;
+      const minutesWatched90 = views90.rows?.[0]?.[1] || 0;
+      const likes90 = views90.rows?.[0]?.[2] || 0;
+      const comments90 = views90.rows?.[0]?.[3] || 0;
+      const subsGained90 = views90.rows?.[0]?.[4] || 0;
+      const subsLost90 = views90.rows?.[0]?.[5] || 0;
 
       const chStats = chStatsData.items?.[0]?.statistics || {};
       const subscriberCount = parseInt(chStats.subscriberCount || 0);
@@ -328,7 +343,7 @@ export default function App() {
         weekPrevViews: weekPrevMap[v.id] || 0,
       }));
 
-      setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal, views60Now, views60PrevVal, views90Now, views90PrevVal, minutesWatched30, likes30, comments30, subsGained30, subsLost30, subscriberCount, totalChannelViews, videoCount });
+      setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal, views60Now, views60PrevVal, views90Now, views90PrevVal, minutesWatched30, likes30, comments30, subsGained30, subsLost30, minutesWatched7, likes7, comments7, subsGained7, subsLost7, minutesWatched60, likes60, comments60, subsGained60, subsLost60, minutesWatched90, likes90, comments90, subsGained90, subsLost90, subscriberCount, totalChannelViews, videoCount });
       setRecentVideos(videos);
     } catch (e) { console.error(e); }
   };
@@ -478,6 +493,19 @@ export default function App() {
     client.requestAccessToken();
   };
 
+  const periodStats = channelInfo ? (() => {
+    const p = viewsPeriod;
+    return {
+      views:      p === 7 ? channelInfo.views7Now      : p === 60 ? channelInfo.views60Now      : p === 90 ? channelInfo.views90Now      : channelInfo.views30Now,
+      viewsPrev:  p === 7 ? channelInfo.views7PrevVal  : p === 60 ? channelInfo.views60PrevVal  : p === 90 ? channelInfo.views90PrevVal  : channelInfo.views30PrevVal,
+      minutes:    p === 7 ? channelInfo.minutesWatched7 : p === 60 ? channelInfo.minutesWatched60 : p === 90 ? channelInfo.minutesWatched90 : channelInfo.minutesWatched30,
+      likes:      p === 7 ? channelInfo.likes7          : p === 60 ? channelInfo.likes60          : p === 90 ? channelInfo.likes90          : channelInfo.likes30,
+      comments:   p === 7 ? channelInfo.comments7       : p === 60 ? channelInfo.comments60       : p === 90 ? channelInfo.comments90       : channelInfo.comments30,
+      subsGained: p === 7 ? channelInfo.subsGained7     : p === 60 ? channelInfo.subsGained60     : p === 90 ? channelInfo.subsGained90     : channelInfo.subsGained30,
+      subsLost:   p === 7 ? channelInfo.subsLost7       : p === 60 ? channelInfo.subsLost60       : p === 90 ? channelInfo.subsLost90       : channelInfo.subsLost30,
+    };
+  })() : null;
+
   if (!token) {
     return (
       <>
@@ -621,49 +649,40 @@ export default function App() {
                 </div>
               </div>
 
-              <p className="stats-section-label">آخر 30 يوم</p>
+              <div className="stats-section-row">
+                <p className="stats-section-label" style={{margin:0}}>الأداء</p>
+                <select className="period-select period-select-lg" value={viewsPeriod} onChange={e => setViewsPeriod(Number(e.target.value))}>
+                  <option value={7}>آخر 7 أيام</option>
+                  <option value={30}>آخر 30 يوم</option>
+                  <option value={60}>آخر 60 يوم</option>
+                  <option value={90}>آخر 90 يوم</option>
+                </select>
+              </div>
               <div className="stats-grid">
                 <div className="stat-card">
-                  <div className="stat-card-top">
-                    <span className="stat-label">المشاهدات</span>
-                    <select className="period-select" value={viewsPeriod} onChange={e => setViewsPeriod(Number(e.target.value))}>
-                      <option value={7}>7 أيام</option>
-                      <option value={30}>30 يوم</option>
-                      <option value={60}>60 يوم</option>
-                      <option value={90}>90 يوم</option>
-                    </select>
-                  </div>
-                  <span className="stat-value">{
-                    (viewsPeriod === 7 ? channelInfo.views7Now :
-                     viewsPeriod === 60 ? channelInfo.views60Now :
-                     viewsPeriod === 90 ? channelInfo.views90Now :
-                     channelInfo.views30Now).toLocaleString("ar")
-                  }</span>
-                  <DeltaBadge
-                    now={viewsPeriod === 7 ? channelInfo.views7Now : viewsPeriod === 60 ? channelInfo.views60Now : viewsPeriod === 90 ? channelInfo.views90Now : channelInfo.views30Now}
-                    prev={viewsPeriod === 7 ? channelInfo.views7PrevVal : viewsPeriod === 60 ? channelInfo.views60PrevVal : viewsPeriod === 90 ? channelInfo.views90PrevVal : channelInfo.views30PrevVal}
-                    label="vs السابق"
-                  />
+                  <span className="stat-label">المشاهدات</span>
+                  <span className="stat-value">{periodStats.views.toLocaleString("ar")}</span>
+                  <DeltaBadge now={periodStats.views} prev={periodStats.viewsPrev} label="vs السابق" />
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">دقائق المشاهدة</span>
-                  <span className="stat-value">{channelInfo.minutesWatched30 ? Math.round(channelInfo.minutesWatched30).toLocaleString("ar") : "—"}</span>
+                  <span className="stat-value">{periodStats.minutes ? Math.round(periodStats.minutes).toLocaleString("ar") : "—"}</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">الإعجابات</span>
-                  <span className="stat-value">{channelInfo.likes30 ? channelInfo.likes30.toLocaleString("ar") : "—"}</span>
+                  <span className="stat-value">{periodStats.likes ? periodStats.likes.toLocaleString("ar") : "—"}</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">التعليقات</span>
-                  <span className="stat-value">{channelInfo.comments30 ? channelInfo.comments30.toLocaleString("ar") : "—"}</span>
+                  <span className="stat-value">{periodStats.comments ? periodStats.comments.toLocaleString("ar") : "—"}</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">مشتركون جدد</span>
-                  <span className="stat-value stat-green">+{(channelInfo.subsGained30 || 0).toLocaleString("ar")}</span>
+                  <span className="stat-value stat-green">+{(periodStats.subsGained || 0).toLocaleString("ar")}</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">مشتركون غادروا</span>
-                  <span className="stat-value stat-red">−{(channelInfo.subsLost30 || 0).toLocaleString("ar")}</span>
+                  <span className="stat-value stat-red">−{(periodStats.subsLost || 0).toLocaleString("ar")}</span>
                 </div>
               </div>
 
@@ -920,8 +939,10 @@ const css = `
   .stat-label { font-size: 0.7rem; color: var(--text-muted); }
   .stat-value { font-size: 1.45rem; font-weight: 700; color: var(--text); }
   .stat-card-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .stats-section-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
   .period-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 6px; padding: 3px 6px; font-size: 0.65rem; font-family: inherit; cursor: pointer; outline: none; direction: rtl; }
   .period-select:focus { border-color: var(--red); }
+  .period-select-lg { font-size: 0.75rem; padding: 5px 10px; color: var(--text); }
   .stat-green { color: var(--green) !important; }
   .stat-red { color: #ef4444 !important; }
   .stats-videos { display: flex; flex-direction: column; gap: 10px; }
