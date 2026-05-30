@@ -175,6 +175,7 @@ export default function App() {
   const [videoCommentsTotal, setVideoCommentsTotal] = useState(null);
   const [videoCommentsLoading, setVideoCommentsLoading] = useState(false);
   const [videoCommentsOrder, setVideoCommentsOrder] = useState("time");
+  const [statsOpen, setStatsOpen] = useState(false);
   const tokenRef = useRef(null);
 
   useEffect(() => {
@@ -237,12 +238,12 @@ export default function App() {
       const searchData = await searchRes.json();
       const videoIds = (searchData.items || []).map(v => v.id.videoId).join(",");
 
-      // Fetch video stats + analytics in parallel
-      const [vidStatsRes, views30Res, views30PrevRes, views7Res, views7PrevRes, vidWeekNowRes, vidWeekPrevRes] = await Promise.all([
+      // Fetch video stats + analytics + channel stats in parallel
+      const [vidStatsRes, views30Res, views30PrevRes, views7Res, views7PrevRes, vidWeekNowRes, vidWeekPrevRes, chStatsRes] = await Promise.all([
         fetch(`${YT_API}/videos?part=snippet,statistics&id=${videoIds}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days30ago}&endDate=${todayStr}&metrics=views`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days30ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${days31ago}&metrics=views`, {
@@ -260,16 +261,29 @@ export default function App() {
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days14ago}&endDate=${days8ago}&metrics=views&dimensions=video&sort=-views&maxResults=200`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
+        fetch(`${YT_API}/channels?part=statistics&id=${channelId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
       ]);
 
-      const [vidStatsData, views30, views30Prev, views7, views7Prev, weekNow, weekPrev] = await Promise.all([
-        vidStatsRes.json(), views30Res.json(), views30PrevRes.json(), views7Res.json(), views7PrevRes.json(), vidWeekNowRes.json(), vidWeekPrevRes.json(),
+      const [vidStatsData, views30, views30Prev, views7, views7Prev, weekNow, weekPrev, chStatsData] = await Promise.all([
+        vidStatsRes.json(), views30Res.json(), views30PrevRes.json(), views7Res.json(), views7PrevRes.json(), vidWeekNowRes.json(), vidWeekPrevRes.json(), chStatsRes.json(),
       ]);
 
       const views30Now = views30.rows?.[0]?.[0] || 0;
       const views30PrevVal = views30Prev.rows?.[0]?.[0] || 0;
       const views7Now = views7.rows?.[0]?.[0] || 0;
       const views7PrevVal = views7Prev.rows?.[0]?.[0] || 0;
+      const minutesWatched30 = views30.rows?.[0]?.[1] || 0;
+      const likes30 = views30.rows?.[0]?.[2] || 0;
+      const comments30 = views30.rows?.[0]?.[3] || 0;
+      const subsGained30 = views30.rows?.[0]?.[4] || 0;
+      const subsLost30 = views30.rows?.[0]?.[5] || 0;
+
+      const chStats = chStatsData.items?.[0]?.statistics || {};
+      const subscriberCount = parseInt(chStats.subscriberCount || 0);
+      const totalChannelViews = parseInt(chStats.viewCount || 0);
+      const videoCount = parseInt(chStats.videoCount || 0);
 
       // Per-video weekly views map
       const weekNowMap = {};
@@ -283,11 +297,13 @@ export default function App() {
         thumbnail: v.snippet.thumbnails?.medium?.url,
         publishedAt: v.snippet.publishedAt,
         totalViews: parseInt(v.statistics?.viewCount || 0),
+        likeCount: parseInt(v.statistics?.likeCount || 0),
+        commentCount: parseInt(v.statistics?.commentCount || 0),
         weekViews: weekNowMap[v.id] || 0,
         weekPrevViews: weekPrevMap[v.id] || 0,
       }));
 
-      setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal });
+      setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal, minutesWatched30, likes30, comments30, subsGained30, subsLost30, subscriberCount, totalChannelViews, videoCount });
       setRecentVideos(videos);
     } catch (e) { console.error(e); }
   };
@@ -473,6 +489,12 @@ export default function App() {
               )}
             </div>
             <div className="header-stats">
+              {channelInfo && (
+                <button className="refresh-btn" onClick={() => setStatsOpen(true)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                  إحصائيات
+                </button>
+              )}
               <button className="refresh-btn" onClick={() => fetchComments(token, null, true)} disabled={loading}>
                 <svg className={loading ? "spin" : ""} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8M3 22v-6h6M21 12a9 9 0 01-15 6.7L3 16"/>
@@ -549,6 +571,108 @@ export default function App() {
         </main>
 
         {toast && <div className={`toast toast-${toast.type}`}>{toast.text}</div>}
+
+        {statsOpen && channelInfo && (
+          <div className="stats-overlay" dir="rtl">
+            <div className="stats-header">
+              <span className="stats-title">الإحصائيات</span>
+              <button className="vc-close" onClick={() => setStatsOpen(false)}>✕ إغلاق</button>
+            </div>
+            <div className="stats-body">
+
+              <p className="stats-section-label">القناة</p>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <span className="stat-label">المشتركون</span>
+                  <span className="stat-value">{channelInfo.subscriberCount ? channelInfo.subscriberCount.toLocaleString("ar") : "—"}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">إجمالي المشاهدات</span>
+                  <span className="stat-value">{channelInfo.totalChannelViews ? channelInfo.totalChannelViews.toLocaleString("ar") : "—"}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">عدد المقاطع</span>
+                  <span className="stat-value">{channelInfo.videoCount ? channelInfo.videoCount.toLocaleString("ar") : "—"}</span>
+                </div>
+              </div>
+
+              <p className="stats-section-label">آخر 30 يوم</p>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <span className="stat-label">المشاهدات</span>
+                  <span className="stat-value">{channelInfo.views30Now.toLocaleString("ar")}</span>
+                  <DeltaBadge now={channelInfo.views30Now} prev={channelInfo.views30PrevVal} label="vs السابق" />
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">دقائق المشاهدة</span>
+                  <span className="stat-value">{channelInfo.minutesWatched30 ? Math.round(channelInfo.minutesWatched30).toLocaleString("ar") : "—"}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">الإعجابات</span>
+                  <span className="stat-value">{channelInfo.likes30 ? channelInfo.likes30.toLocaleString("ar") : "—"}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">التعليقات</span>
+                  <span className="stat-value">{channelInfo.comments30 ? channelInfo.comments30.toLocaleString("ar") : "—"}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">مشتركون جدد</span>
+                  <span className="stat-value stat-green">+{(channelInfo.subsGained30 || 0).toLocaleString("ar")}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">مشتركون غادروا</span>
+                  <span className="stat-value stat-red">−{(channelInfo.subsLost30 || 0).toLocaleString("ar")}</span>
+                </div>
+              </div>
+
+              <p className="stats-section-label">آخر 7 أيام</p>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <span className="stat-label">المشاهدات</span>
+                  <span className="stat-value">{channelInfo.views7Now.toLocaleString("ar")}</span>
+                  <DeltaBadge now={channelInfo.views7Now} prev={channelInfo.views7PrevVal} label="vs السابق" />
+                </div>
+              </div>
+
+              <p className="stats-section-label">آخر المقاطع</p>
+              <div className="stats-videos">
+                {recentVideos.map(v => {
+                  const weekDiff = (v.weekViews || 0) - (v.weekPrevViews || 0);
+                  return (
+                    <div key={v.id} className="stats-video-row">
+                      <a href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer" className="stats-video-link">
+                        <img src={v.thumbnail} alt="" className="stats-video-thumb" />
+                      </a>
+                      <div className="stats-video-info">
+                        <p className="stats-video-title">{v.title}</p>
+                        <p className="stats-video-date">{daysAgoAr(Math.floor((Date.now() - new Date(v.publishedAt)) / 86400000))}</p>
+                      </div>
+                      <div className="stats-video-nums">
+                        <div className="stats-vid-stat">
+                          <span className="stats-vid-num">{v.totalViews.toLocaleString("ar")}</span>
+                          <span className="stats-vid-lbl">مشاهدة</span>
+                        </div>
+                        <div className="stats-vid-stat">
+                          <span className="stats-vid-num">{v.likeCount ? v.likeCount.toLocaleString("ar") : "—"}</span>
+                          <span className="stats-vid-lbl">إعجاب</span>
+                        </div>
+                        <div className="stats-vid-stat">
+                          <span className="stats-vid-num">{v.commentCount ? v.commentCount.toLocaleString("ar") : "—"}</span>
+                          <span className="stats-vid-lbl">تعليق</span>
+                        </div>
+                        <div className="stats-vid-stat">
+                          <span className={`stats-vid-num ${weekDiff >= 0 ? "stat-green" : "stat-red"}`}>{weekDiff >= 0 ? "+" : ""}{weekDiff.toLocaleString("ar")}</span>
+                          <span className="stats-vid-lbl">هذا الأسبوع</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {videoCommentsModal && (
           <div className="vc-overlay" onClick={() => setVideoCommentsModal(null)}>
@@ -752,7 +876,36 @@ const css = `
   .last-video-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; }
   .last-video-label { font-size: 0.82rem; color: var(--text-muted); }
   .last-video-days { font-size: 1.3rem; font-weight: 700; color: var(--text); }
+
+  .stats-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 300; display: flex; flex-direction: column; }
+  .stats-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: rgba(15,15,15,0.96); backdrop-filter: blur(10px); }
+  .stats-title { font-size: 1rem; font-weight: 600; }
+  .stats-body { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; max-width: 900px; width: 100%; margin: 0 auto; padding-bottom: 40px; }
+  .stats-section-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-top: 10px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .stat-label { font-size: 0.7rem; color: var(--text-muted); }
+  .stat-value { font-size: 1.45rem; font-weight: 700; color: var(--text); }
+  .stat-green { color: var(--green) !important; }
+  .stat-red { color: #ef4444 !important; }
+  .stats-videos { display: flex; flex-direction: column; gap: 10px; }
+  .stats-video-row { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; }
+  .stats-video-link { flex-shrink: 0; }
+  .stats-video-thumb { width: 88px; aspect-ratio: 16/9; object-fit: cover; border-radius: 7px; display: block; }
+  .stats-video-info { flex: 1; min-width: 0; }
+  .stats-video-title { font-size: 0.82rem; color: var(--text); line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .stats-video-date { font-size: 0.68rem; color: var(--text-muted); margin-top: 3px; }
+  .stats-video-nums { display: flex; gap: 14px; flex-shrink: 0; }
+  .stats-vid-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 36px; }
+  .stats-vid-num { font-size: 0.8rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .stats-vid-lbl { font-size: 0.6rem; color: var(--text-muted); }
+
   @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-value { font-size: 1.1rem; }
+    .stats-video-thumb { width: 64px; }
+    .stats-video-nums { gap: 8px; }
+    .stats-vid-num { font-size: 0.7rem; }
     .cards-grid { grid-template-columns: 1fr; }
     .header-inner { padding: 12px 16px; }
     .actions { flex-direction: row; }
