@@ -543,16 +543,14 @@ export default function App() {
             </div>
             <div className="header-stats">
               {channelInfo && (
-                <button className="refresh-btn" onClick={() => setStatsOpen(true)}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-                  إحصائيات
+                <button className="icon-btn" onClick={() => setStatsOpen(true)} title="إحصائيات">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
                 </button>
               )}
-              <button className="refresh-btn" onClick={() => fetchComments(token, null, true)} disabled={loading}>
-                <svg className={loading ? "spin" : ""} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <button className="icon-btn" onClick={() => fetchComments(token, null, true)} disabled={loading} title="تحديث">
+                <svg className={loading ? "spin" : ""} width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8M3 22v-6h6M21 12a9 9 0 01-15 6.7L3 16"/>
                 </svg>
-                تحديث
               </button>
             </div>
           </div>
@@ -829,6 +827,9 @@ const css = `
   .refresh-btn, .logout-btn { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 12px; font-size: 0.82rem; font-family: inherit; cursor: pointer; transition: background 0.2s; }
   .refresh-btn:hover, .logout-btn:hover { background: var(--surface2); }
   .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .icon-btn { display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+  .icon-btn:hover { background: var(--surface2); }
+  .icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .logout-btn { color: var(--text-muted); }
   .spin { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
