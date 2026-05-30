@@ -314,7 +314,9 @@ export default function App() {
       (weekNow.rows || []).forEach(r => { weekNowMap[r[0]] = r[1]; });
       (weekPrev.rows || []).forEach(r => { weekPrevMap[r[0]] = r[1]; });
 
-      const videos = (vidStatsData.items || []).map(v => ({
+      const videos = (vidStatsData.items || [])
+        .filter(v => (Date.now() - new Date(v.snippet.publishedAt).getTime()) <= 1000 * 86400000)
+        .map(v => ({
         id: v.id,
         title: v.snippet.title,
         thumbnail: v.snippet.thumbnails?.medium?.url,
