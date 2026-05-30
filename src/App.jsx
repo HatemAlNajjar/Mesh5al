@@ -20,24 +20,6 @@ function clearStoredToken() {
   localStorage.removeItem(EXPIRY_KEY);
 }
 
-async function idbSave(key, val) {
-  if (!('indexedDB' in window)) return;
-  try {
-    const db = await new Promise((res, rej) => {
-      const req = indexedDB.open('mesh5al-db', 1);
-      req.onupgradeneeded = e => e.target.result.createObjectStore('data');
-      req.onsuccess = e => res(e.target.result);
-      req.onerror = () => rej(req.error);
-    });
-    await new Promise((res, rej) => {
-      const tx = db.transaction('data', 'readwrite');
-      tx.objectStore('data').put(val, key);
-      tx.oncomplete = res;
-      tx.onerror = () => rej(tx.error);
-    });
-    db.close();
-  } catch {}
-}
 
 function AppIcon({ size = 40 }) {
   return (
@@ -194,9 +176,6 @@ export default function App() {
   const [videoCommentsLoading, setVideoCommentsLoading] = useState(false);
   const [videoCommentsOrder, setVideoCommentsOrder] = useState("time");
   const tokenRef = useRef(null);
-  const swRef = useRef(null);
-  const knownIdsRef = useRef(new Set());
-  const [notifEnabled, setNotifEnabled] = useState(() => localStorage.getItem('notif_enabled') === 'true');
 
   useEffect(() => {
     const stored = loadToken();
@@ -234,121 +213,9 @@ export default function App() {
     client.requestAccessToken();
   }, [gsiLoaded]);
 
-  useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('/Mesh5al/sw.js').then(async reg => {
-      swRef.current = reg;
-      if (localStorage.getItem('notif_enabled') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
-        if ('periodicSync' in reg) {
-          try { await reg.periodicSync.register('check-comments', { minInterval: 5 * 60 * 1000 }); } catch {}
-        }
-      }
-    }).catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!token) return;
-    const expiry = Number(localStorage.getItem(EXPIRY_KEY) || '0');
-    idbSave('token', token);
-    idbSave('tokenExpiry', expiry);
-    const sw = swRef.current?.active || navigator.serviceWorker?.controller;
-    sw?.postMessage({ type: 'SAVE_TOKEN', token, expiry });
-  }, [token]);
-
-  useEffect(() => {
-    if (!notifEnabled) return;
-    const ids = comments.map(c => c.id);
-    knownIdsRef.current = new Set(ids);
-    idbSave('knownIds', ids);
-    swRef.current?.active?.postMessage({ type: 'SAVE_KNOWN_IDS', ids });
-  }, [comments, notifEnabled]);
-
-  const checkForNewComments = async () => {
-    const t = tokenRef.current;
-    if (!t || Notification.permission !== 'granted') return;
-    try {
-      const chRes = await fetch(`${YT_API}/channels?part=id&mine=true`, {
-        headers: { Authorization: `Bearer ${t}` }
-      });
-      const chData = await chRes.json();
-      const channelId = chData.items?.[0]?.id;
-      if (!channelId) return;
-      const params = new URLSearchParams({
-        part: 'snippet',
-        moderationStatus: 'heldForReview',
-        maxResults: '50',
-        allThreadsRelatedToChannelId: channelId,
-      });
-      const res = await fetch(`${YT_API}/commentThreads?${params}`, {
-        headers: { Authorization: `Bearer ${t}` }
-      });
-      const data = await res.json();
-      if (data.error) return;
-      const items = data.items || [];
-      const newOnes = items.filter(i => !knownIdsRef.current.has(i.id));
-      if (newOnes.length > 0) {
-        const notifOpts = {
-          body: newOnes.length === 1
-            ? 'تعليق جديد معلّق للمراجعة'
-            : `${newOnes.length} تعليقات جديدة معلّقة للمراجعة`,
-          icon: '/Mesh5al/icon-192.png',
-          dir: 'rtl',
-          lang: 'ar',
-          tag: 'pending-comments',
-        };
-        // Use SW notification (required on iOS PWA), fall back to direct API
-        if (swRef.current) {
-          swRef.current.showNotification('مشخال 🎬', notifOpts).catch(() => {
-            new Notification('مشخال 🎬', notifOpts);
-          });
-        } else {
-          new Notification('مشخال 🎬', notifOpts);
-        }
-      }
-      knownIdsRef.current = new Set(items.map(i => i.id));
-      idbSave('knownIds', items.map(i => i.id));
-    } catch {}
-  };
-
-  useEffect(() => {
-    if (!notifEnabled || !token) return;
-    const tid = setInterval(checkForNewComments, 3 * 60 * 1000);
-    return () => clearInterval(tid);
-  }, [notifEnabled, token]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const showToast = (text, type = "success") => {
     setToast({ text, type });
     setTimeout(() => setToast(null), 3000);
-  };
-
-  const enableNotifications = async () => {
-    if (!('Notification' in window)) { showToast('متصفحك لا يدعم الإشعارات', 'error'); return; }
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { showToast('تم رفض إذن الإشعارات', 'error'); return; }
-    localStorage.setItem('notif_enabled', 'true');
-    setNotifEnabled(true);
-    const reg = swRef.current;
-    if (reg && 'periodicSync' in reg) {
-      try { await reg.periodicSync.register('check-comments', { minInterval: 5 * 60 * 1000 }); } catch {}
-    }
-    const ids = comments.map(c => c.id);
-    knownIdsRef.current = new Set(ids);
-    if (ids.length > 0) {
-      idbSave('knownIds', ids);
-      reg?.active?.postMessage({ type: 'SAVE_KNOWN_IDS', ids });
-    }
-    showToast('✓ سيتم إرسال إشعارات عند وجود تعليقات جديدة', 'success');
-    setTimeout(checkForNewComments, 1500);
-  };
-
-  const disableNotifications = async () => {
-    localStorage.setItem('notif_enabled', 'false');
-    setNotifEnabled(false);
-    const reg = swRef.current;
-    if (reg && 'periodicSync' in reg) {
-      try { await reg.periodicSync.unregister('check-comments'); } catch {}
-    }
-    showToast('تم إيقاف الإشعارات', 'success');
   };
 
   const fetchChannelData = async (accessToken, channelId) => {
@@ -606,20 +473,6 @@ export default function App() {
               )}
             </div>
             <div className="header-stats">
-              {'Notification' in window && (
-                <button
-                  className={`refresh-btn${notifEnabled ? " notif-active" : ""}`}
-                  onClick={notifEnabled ? disableNotifications : enableNotifications}
-                  title={notifEnabled ? "إيقاف الإشعارات" : "تفعيل الإشعارات"}
-                >
-                  {notifEnabled ? (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-                  ) : (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
-                  )}
-                  إشعارات
-                </button>
-              )}
               <button className="refresh-btn" onClick={() => fetchComments(token, null, true)} disabled={loading}>
                 <svg className={loading ? "spin" : ""} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8M3 22v-6h6M21 12a9 9 0 01-15 6.7L3 16"/>
@@ -800,7 +653,6 @@ const css = `
   .refresh-btn, .logout-btn { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 12px; font-size: 0.82rem; font-family: inherit; cursor: pointer; transition: background 0.2s; }
   .refresh-btn:hover, .logout-btn:hover { background: var(--surface2); }
   .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .notif-active { color: #f97316 !important; border-color: rgba(249,115,22,0.4) !important; }
   .logout-btn { color: var(--text-muted); }
   .spin { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
