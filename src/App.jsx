@@ -176,6 +176,7 @@ export default function App() {
   const [videoCommentsLoading, setVideoCommentsLoading] = useState(false);
   const [videoCommentsOrder, setVideoCommentsOrder] = useState("time");
   const [statsOpen, setStatsOpen] = useState(false);
+  const [viewsPeriod, setViewsPeriod] = useState(30);
   const tokenRef = useRef(null);
 
   useEffect(() => {
@@ -230,6 +231,11 @@ export default function App() {
       const days7ago  = fmt(new Date(today - 7  * 86400000));
       const days14ago = fmt(new Date(today - 14 * 86400000));
       const days8ago  = fmt(new Date(today - 8  * 86400000));
+      const days61ago  = fmt(new Date(today - 61  * 86400000));
+      const days90ago  = fmt(new Date(today - 90  * 86400000));
+      const days91ago  = fmt(new Date(today - 91  * 86400000));
+      const days120ago = fmt(new Date(today - 120 * 86400000));
+      const days180ago = fmt(new Date(today - 180 * 86400000));
 
       // Fetch last 10 videos
       const searchRes = await fetch(`${YT_API}/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=10`, {
@@ -239,7 +245,7 @@ export default function App() {
       const videoIds = (searchData.items || []).map(v => v.id.videoId).join(",");
 
       // Fetch video stats + analytics + channel stats in parallel
-      const [vidStatsRes, views30Res, views30PrevRes, views7Res, views7PrevRes, vidWeekNowRes, vidWeekPrevRes, chStatsRes] = await Promise.all([
+      const [vidStatsRes, views30Res, views30PrevRes, views7Res, views7PrevRes, vidWeekNowRes, vidWeekPrevRes, chStatsRes, views60Res, views60PrevRes, views90Res, views90PrevRes] = await Promise.all([
         fetch(`${YT_API}/videos?part=snippet,statistics&id=${videoIds}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
@@ -264,16 +270,33 @@ export default function App() {
         fetch(`${YT_API}/channels?part=statistics&id=${channelId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${todayStr}&metrics=views`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days120ago}&endDate=${days61ago}&metrics=views`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days90ago}&endDate=${todayStr}&metrics=views`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days180ago}&endDate=${days91ago}&metrics=views`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
       ]);
 
-      const [vidStatsData, views30, views30Prev, views7, views7Prev, weekNow, weekPrev, chStatsData] = await Promise.all([
+      const [vidStatsData, views30, views30Prev, views7, views7Prev, weekNow, weekPrev, chStatsData, views60, views60Prev, views90, views90Prev] = await Promise.all([
         vidStatsRes.json(), views30Res.json(), views30PrevRes.json(), views7Res.json(), views7PrevRes.json(), vidWeekNowRes.json(), vidWeekPrevRes.json(), chStatsRes.json(),
+        views60Res.json(), views60PrevRes.json(), views90Res.json(), views90PrevRes.json(),
       ]);
 
       const views30Now = views30.rows?.[0]?.[0] || 0;
       const views30PrevVal = views30Prev.rows?.[0]?.[0] || 0;
       const views7Now = views7.rows?.[0]?.[0] || 0;
       const views7PrevVal = views7Prev.rows?.[0]?.[0] || 0;
+      const views60Now = views60.rows?.[0]?.[0] || 0;
+      const views60PrevVal = views60Prev.rows?.[0]?.[0] || 0;
+      const views90Now = views90.rows?.[0]?.[0] || 0;
+      const views90PrevVal = views90Prev.rows?.[0]?.[0] || 0;
       const minutesWatched30 = views30.rows?.[0]?.[1] || 0;
       const likes30 = views30.rows?.[0]?.[2] || 0;
       const comments30 = views30.rows?.[0]?.[3] || 0;
@@ -303,7 +326,7 @@ export default function App() {
         weekPrevViews: weekPrevMap[v.id] || 0,
       }));
 
-      setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal, minutesWatched30, likes30, comments30, subsGained30, subsLost30, subscriberCount, totalChannelViews, videoCount });
+      setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal, views60Now, views60PrevVal, views90Now, views90PrevVal, minutesWatched30, likes30, comments30, subsGained30, subsLost30, subscriberCount, totalChannelViews, videoCount });
       setRecentVideos(videos);
     } catch (e) { console.error(e); }
   };
@@ -599,9 +622,26 @@ export default function App() {
               <p className="stats-section-label">آخر 30 يوم</p>
               <div className="stats-grid">
                 <div className="stat-card">
-                  <span className="stat-label">المشاهدات</span>
-                  <span className="stat-value">{channelInfo.views30Now.toLocaleString("ar")}</span>
-                  <DeltaBadge now={channelInfo.views30Now} prev={channelInfo.views30PrevVal} label="vs السابق" />
+                  <div className="stat-card-top">
+                    <span className="stat-label">المشاهدات</span>
+                    <select className="period-select" value={viewsPeriod} onChange={e => setViewsPeriod(Number(e.target.value))}>
+                      <option value={7}>7 أيام</option>
+                      <option value={30}>30 يوم</option>
+                      <option value={60}>60 يوم</option>
+                      <option value={90}>90 يوم</option>
+                    </select>
+                  </div>
+                  <span className="stat-value">{
+                    (viewsPeriod === 7 ? channelInfo.views7Now :
+                     viewsPeriod === 60 ? channelInfo.views60Now :
+                     viewsPeriod === 90 ? channelInfo.views90Now :
+                     channelInfo.views30Now).toLocaleString("ar")
+                  }</span>
+                  <DeltaBadge
+                    now={viewsPeriod === 7 ? channelInfo.views7Now : viewsPeriod === 60 ? channelInfo.views60Now : viewsPeriod === 90 ? channelInfo.views90Now : channelInfo.views30Now}
+                    prev={viewsPeriod === 7 ? channelInfo.views7PrevVal : viewsPeriod === 60 ? channelInfo.views60PrevVal : viewsPeriod === 90 ? channelInfo.views90PrevVal : channelInfo.views30PrevVal}
+                    label="vs السابق"
+                  />
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">دقائق المشاهدة</span>
@@ -622,15 +662,6 @@ export default function App() {
                 <div className="stat-card">
                   <span className="stat-label">مشتركون غادروا</span>
                   <span className="stat-value stat-red">−{(channelInfo.subsLost30 || 0).toLocaleString("ar")}</span>
-                </div>
-              </div>
-
-              <p className="stats-section-label">آخر 7 أيام</p>
-              <div className="stats-grid">
-                <div className="stat-card">
-                  <span className="stat-label">المشاهدات</span>
-                  <span className="stat-value">{channelInfo.views7Now.toLocaleString("ar")}</span>
-                  <DeltaBadge now={channelInfo.views7Now} prev={channelInfo.views7PrevVal} label="vs السابق" />
                 </div>
               </div>
 
@@ -886,6 +917,9 @@ const css = `
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
   .stat-label { font-size: 0.7rem; color: var(--text-muted); }
   .stat-value { font-size: 1.45rem; font-weight: 700; color: var(--text); }
+  .stat-card-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .period-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); border-radius: 6px; padding: 3px 6px; font-size: 0.65rem; font-family: inherit; cursor: pointer; outline: none; direction: rtl; }
+  .period-select:focus { border-color: var(--red); }
   .stat-green { color: var(--green) !important; }
   .stat-red { color: #ef4444 !important; }
   .stats-videos { display: flex; flex-direction: column; gap: 10px; }
