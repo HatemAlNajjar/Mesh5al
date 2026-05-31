@@ -678,10 +678,7 @@ export default function App() {
                   <span className="stat-label">مشتركون جدد</span>
                   <span className="stat-value stat-green">+{(periodStats.subsGained || 0).toLocaleString("ar")}</span>
                 </div>
-                <div className="stat-card">
-                  <span className="stat-label">مشتركون غادروا</span>
-                  <span className="stat-value stat-red">−{(periodStats.subsLost || 0).toLocaleString("ar")}</span>
-                </div>
+
               </div>
 
               <p className="stats-section-label">آخر المقاطع</p>
