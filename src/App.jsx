@@ -249,13 +249,13 @@ export default function App() {
         fetch(`${YT_API}/videos?part=snippet,statistics&id=${videoIds}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days30ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days30ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost,estimatedRevenue`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${days31ago}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days7ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days7ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost,estimatedRevenue`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days14ago}&endDate=${days8ago}&metrics=views`, {
@@ -270,13 +270,13 @@ export default function App() {
         fetch(`${YT_API}/channels?part=statistics&id=${channelId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost,estimatedRevenue`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days120ago}&endDate=${days61ago}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days90ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days90ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost,estimatedRevenue`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days180ago}&endDate=${days91ago}&metrics=views`, {
@@ -302,21 +302,25 @@ export default function App() {
       const comments30 = views30.rows?.[0]?.[3] || 0;
       const subsGained30 = views30.rows?.[0]?.[4] || 0;
       const subsLost30 = views30.rows?.[0]?.[5] || 0;
+      const revenue30 = views30.rows?.[0]?.[6] || 0;
       const minutesWatched7 = views7.rows?.[0]?.[1] || 0;
       const likes7 = views7.rows?.[0]?.[2] || 0;
       const comments7 = views7.rows?.[0]?.[3] || 0;
       const subsGained7 = views7.rows?.[0]?.[4] || 0;
       const subsLost7 = views7.rows?.[0]?.[5] || 0;
+      const revenue7 = views7.rows?.[0]?.[6] || 0;
       const minutesWatched60 = views60.rows?.[0]?.[1] || 0;
       const likes60 = views60.rows?.[0]?.[2] || 0;
       const comments60 = views60.rows?.[0]?.[3] || 0;
       const subsGained60 = views60.rows?.[0]?.[4] || 0;
       const subsLost60 = views60.rows?.[0]?.[5] || 0;
+      const revenue60 = views60.rows?.[0]?.[6] || 0;
       const minutesWatched90 = views90.rows?.[0]?.[1] || 0;
       const likes90 = views90.rows?.[0]?.[2] || 0;
       const comments90 = views90.rows?.[0]?.[3] || 0;
       const subsGained90 = views90.rows?.[0]?.[4] || 0;
       const subsLost90 = views90.rows?.[0]?.[5] || 0;
+      const revenue90 = views90.rows?.[0]?.[6] || 0;
 
       const chStats = chStatsData.items?.[0]?.statistics || {};
       const subscriberCount = parseInt(chStats.subscriberCount || 0);
@@ -343,7 +347,7 @@ export default function App() {
         weekPrevViews: weekPrevMap[v.id] || 0,
       }));
 
-      setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal, views60Now, views60PrevVal, views90Now, views90PrevVal, minutesWatched30, likes30, comments30, subsGained30, subsLost30, minutesWatched7, likes7, comments7, subsGained7, subsLost7, minutesWatched60, likes60, comments60, subsGained60, subsLost60, minutesWatched90, likes90, comments90, subsGained90, subsLost90, subscriberCount, totalChannelViews, videoCount });
+      setChannelInfo({ views30Now, views30PrevVal, views7Now, views7PrevVal, views60Now, views60PrevVal, views90Now, views90PrevVal, minutesWatched30, likes30, comments30, subsGained30, subsLost30, revenue30, minutesWatched7, likes7, comments7, subsGained7, subsLost7, revenue7, minutesWatched60, likes60, comments60, subsGained60, subsLost60, revenue60, minutesWatched90, likes90, comments90, subsGained90, subsLost90, revenue90, subscriberCount, totalChannelViews, videoCount });
       setRecentVideos(videos);
     } catch (e) { console.error(e); }
   };
@@ -503,6 +507,7 @@ export default function App() {
       comments:   p === 7 ? channelInfo.comments7       : p === 60 ? channelInfo.comments60       : p === 90 ? channelInfo.comments90       : channelInfo.comments30,
       subsGained: p === 7 ? channelInfo.subsGained7     : p === 60 ? channelInfo.subsGained60     : p === 90 ? channelInfo.subsGained90     : channelInfo.subsGained30,
       subsLost:   p === 7 ? channelInfo.subsLost7       : p === 60 ? channelInfo.subsLost60       : p === 90 ? channelInfo.subsLost90       : channelInfo.subsLost30,
+      revenue:    p === 7 ? channelInfo.revenue7        : p === 60 ? channelInfo.revenue60        : p === 90 ? channelInfo.revenue90        : channelInfo.revenue30,
     };
   })() : null;
 
@@ -673,6 +678,10 @@ export default function App() {
                 <div className="stat-card">
                   <span className="stat-label">التعليقات</span>
                   <span className="stat-value">{periodStats.comments ? periodStats.comments.toLocaleString("ar") : "—"}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">الإيرادات المقدرة</span>
+                  <span className="stat-value">{periodStats.revenue != null ? `$${periodStats.revenue.toFixed(2)}` : "—"}</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">مشتركون جدد</span>
