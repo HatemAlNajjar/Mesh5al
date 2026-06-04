@@ -2,22 +2,28 @@ import { useState, useEffect, useRef } from "react";
 
 const YT_API = "https://www.googleapis.com/youtube/v3";
 const YT_ANALYTICS = "https://youtubeanalytics.googleapis.com/v2";
-const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly";
+const SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly";
 
 const TOKEN_KEY = 'yt_access_token';
 const EXPIRY_KEY = 'yt_token_expiry';
+const SCOPE_VERSION_KEY = 'yt_scope_version';
+const CURRENT_SCOPE_VERSION = '2'; // bump when SCOPE changes to force re-login
 function saveToken(tok) {
   localStorage.setItem(TOKEN_KEY, tok);
   localStorage.setItem(EXPIRY_KEY, String(Date.now() + 604800 * 1000));
+  localStorage.setItem(SCOPE_VERSION_KEY, CURRENT_SCOPE_VERSION);
 }
 function loadToken() {
   const tok = localStorage.getItem(TOKEN_KEY);
   const exp = Number(localStorage.getItem(EXPIRY_KEY) || '0');
+  const scopeVer = localStorage.getItem(SCOPE_VERSION_KEY);
+  if (scopeVer !== CURRENT_SCOPE_VERSION) { clearStoredToken(); return null; }
   return tok && Date.now() < exp ? tok : null;
 }
 function clearStoredToken() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(EXPIRY_KEY);
+  localStorage.removeItem(SCOPE_VERSION_KEY);
 }
 
 
