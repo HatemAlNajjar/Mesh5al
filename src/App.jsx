@@ -733,7 +733,7 @@ export default function App() {
                           <span className="stats-vid-lbl">تعليق</span>
                         </div>
                         <div className="stats-vid-stat">
-                          <span className={`stats-vid-num ${weekDiff >= 0 ? "stat-green" : "stat-red"}`}>{weekDiff >= 0 ? "+" : ""}{weekDiff.toLocaleString("ar")}</span>
+                          <span className="stats-vid-num">{(v.weekViews || 0).toLocaleString("ar")}</span>
                           <span className="stats-vid-lbl">هذا الأسبوع</span>
                         </div>
                       </div>
