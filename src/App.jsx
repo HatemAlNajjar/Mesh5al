@@ -697,7 +697,7 @@ export default function App() {
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">الإيرادات المقدرة</span>
-                  <span className="stat-value">{periodStats.revenue != null ? `$${periodStats.revenue.toFixed(2)}` : "—"}</span>
+                  <span className="stat-value">{periodStats.revenue != null ? `${(periodStats.revenue * 3.75).toFixed(2)} ر.س` : "—"}</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">مشتركون جدد</span>
