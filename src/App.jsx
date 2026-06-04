@@ -245,17 +245,18 @@ export default function App() {
       const videoIds = (searchData.items || []).map(v => v.id.videoId).join(",");
 
       // Fetch video stats + analytics + channel stats in parallel
+      // estimatedRevenue is fetched separately as it requires yt-analytics-monetary.readonly scope
       const [vidStatsRes, views30Res, views30PrevRes, views7Res, views7PrevRes, vidWeekNowRes, vidWeekPrevRes, chStatsRes, views60Res, views60PrevRes, views90Res, views90PrevRes] = await Promise.all([
         fetch(`${YT_API}/videos?part=snippet,statistics&id=${videoIds}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days30ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost,estimatedRevenue`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days30ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${days31ago}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days7ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost,estimatedRevenue`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days7ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days14ago}&endDate=${days8ago}&metrics=views`, {
@@ -270,13 +271,13 @@ export default function App() {
         fetch(`${YT_API}/channels?part=statistics&id=${channelId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost,estimatedRevenue`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days120ago}&endDate=${days61ago}&metrics=views`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
-        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days90ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost,estimatedRevenue`, {
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days90ago}&endDate=${todayStr}&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days180ago}&endDate=${days91ago}&metrics=views`, {
@@ -288,6 +289,15 @@ export default function App() {
         vidStatsRes.json(), views30Res.json(), views30PrevRes.json(), views7Res.json(), views7PrevRes.json(), vidWeekNowRes.json(), vidWeekPrevRes.json(), chStatsRes.json(),
         views60Res.json(), views60PrevRes.json(), views90Res.json(), views90PrevRes.json(),
       ]);
+
+      // Fetch revenue separately — fails silently if scope is unavailable or channel is not monetized
+      const revenueResults = await Promise.allSettled([
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days7ago}&endDate=${todayStr}&metrics=estimatedRevenue`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days30ago}&endDate=${todayStr}&metrics=estimatedRevenue`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days60ago}&endDate=${todayStr}&metrics=estimatedRevenue`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()),
+        fetch(`${YT_ANALYTICS}/reports?ids=channel==${channelId}&startDate=${days90ago}&endDate=${todayStr}&metrics=estimatedRevenue`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json()),
+      ]);
+      const getRevenue = (result) => result.status === "fulfilled" && !result.value?.error ? (result.value?.rows?.[0]?.[0] || 0) : 0;
 
       const views30Now = views30.rows?.[0]?.[0] || 0;
       const views30PrevVal = views30Prev.rows?.[0]?.[0] || 0;
@@ -302,25 +312,25 @@ export default function App() {
       const comments30 = views30.rows?.[0]?.[3] || 0;
       const subsGained30 = views30.rows?.[0]?.[4] || 0;
       const subsLost30 = views30.rows?.[0]?.[5] || 0;
-      const revenue30 = views30.rows?.[0]?.[6] || 0;
+      const revenue30 = getRevenue(revenueResults[1]);
       const minutesWatched7 = views7.rows?.[0]?.[1] || 0;
       const likes7 = views7.rows?.[0]?.[2] || 0;
       const comments7 = views7.rows?.[0]?.[3] || 0;
       const subsGained7 = views7.rows?.[0]?.[4] || 0;
       const subsLost7 = views7.rows?.[0]?.[5] || 0;
-      const revenue7 = views7.rows?.[0]?.[6] || 0;
+      const revenue7 = getRevenue(revenueResults[0]);
       const minutesWatched60 = views60.rows?.[0]?.[1] || 0;
       const likes60 = views60.rows?.[0]?.[2] || 0;
       const comments60 = views60.rows?.[0]?.[3] || 0;
       const subsGained60 = views60.rows?.[0]?.[4] || 0;
       const subsLost60 = views60.rows?.[0]?.[5] || 0;
-      const revenue60 = views60.rows?.[0]?.[6] || 0;
+      const revenue60 = getRevenue(revenueResults[2]);
       const minutesWatched90 = views90.rows?.[0]?.[1] || 0;
       const likes90 = views90.rows?.[0]?.[2] || 0;
       const comments90 = views90.rows?.[0]?.[3] || 0;
       const subsGained90 = views90.rows?.[0]?.[4] || 0;
       const subsLost90 = views90.rows?.[0]?.[5] || 0;
-      const revenue90 = views90.rows?.[0]?.[6] || 0;
+      const revenue90 = getRevenue(revenueResults[3]);
 
       const chStats = chStatsData.items?.[0]?.statistics || {};
       const subscriberCount = parseInt(chStats.subscriberCount || 0);
