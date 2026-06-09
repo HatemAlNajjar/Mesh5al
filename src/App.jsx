@@ -421,7 +421,7 @@ export default function App() {
       }
       if (reset) fetchChannelData(accessToken, channelId);
       const params = new URLSearchParams({
-        part: "snippet,replies",
+        part: "snippet",
         moderationStatus: "heldForReview",
         maxResults: "20",
         allThreadsRelatedToChannelId: channelId,
@@ -437,26 +437,36 @@ export default function App() {
         return;
       }
       const rawItems = data.items || [];
-      // Flatten threads: if a thread has pending replies, show each reply as a separate card
-      const items = [];
-      for (const thread of rawItems) {
-        const replies = thread.snippet?.replies?.comments || [];
-        if (replies.length > 0) {
-          for (const reply of replies) {
-            items.push({
-              id: reply.id,
-              _isReply: true,
-              _parentSnippet: thread.snippet?.topLevelComment?.snippet,
-              snippet: {
-                topLevelComment: { id: reply.id, snippet: reply.snippet },
-                videoId: thread.snippet?.videoId,
-              },
+      // When topLevelComment is already published, the pending item is a reply.
+      // Fetch that reply separately since pending replies are not included in the thread response.
+      const itemArrays = await Promise.all(rawItems.map(async (thread) => {
+        const topLevel = thread.snippet?.topLevelComment;
+        const videoId = thread.snippet?.videoId;
+        if (topLevel?.snippet?.moderationStatus === 'published') {
+          try {
+            const rRes = await fetch(`${YT_API}/comments?part=snippet&parentId=${topLevel.id}`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
             });
-          }
-        } else {
-          items.push(thread);
+            const rData = await rRes.json();
+            const pendingReplies = (rData.items || []).filter(
+              r => r.snippet?.moderationStatus === 'heldForReview'
+            );
+            if (pendingReplies.length > 0) {
+              return pendingReplies.map(reply => ({
+                id: reply.id,
+                _isReply: true,
+                _parentSnippet: topLevel.snippet,
+                snippet: {
+                  topLevelComment: { id: reply.id, snippet: reply.snippet },
+                  videoId,
+                },
+              }));
+            }
+          } catch {}
         }
-      }
+        return [thread];
+      }));
+      const items = itemArrays.flat();
       setComments(prev => reset ? items : [...prev, ...items]);
       setNextPage(data.nextPageToken || null);
       // Fetch video titles
