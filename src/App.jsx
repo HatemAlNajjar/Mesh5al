@@ -137,6 +137,13 @@ function CommentCard({ comment, onAction, videoTitle }) {
         )}
       </div>
 
+      {comment._isReply && comment._parentSnippet && (
+        <div className="reply-context">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>
+          <span>رد على <strong>{comment._parentSnippet.authorDisplayName || "تعليق"}</strong></span>
+        </div>
+      )}
+
       {videoTitle && (
         <p className="video-title-label">🎬 {videoTitle}</p>
       )}
@@ -414,7 +421,7 @@ export default function App() {
       }
       if (reset) fetchChannelData(accessToken, channelId);
       const params = new URLSearchParams({
-        part: "snippet",
+        part: "snippet,replies",
         moderationStatus: "heldForReview",
         maxResults: "20",
         allThreadsRelatedToChannelId: channelId,
@@ -429,7 +436,27 @@ export default function App() {
         if (data.error.code === 401) { clearStoredToken(); setToken(null); }
         return;
       }
-      const items = data.items || [];
+      const rawItems = data.items || [];
+      // Flatten threads: if a thread has pending replies, show each reply as a separate card
+      const items = [];
+      for (const thread of rawItems) {
+        const replies = thread.snippet?.replies?.comments || [];
+        if (replies.length > 0) {
+          for (const reply of replies) {
+            items.push({
+              id: reply.id,
+              _isReply: true,
+              _parentSnippet: thread.snippet?.topLevelComment?.snippet,
+              snippet: {
+                topLevelComment: { id: reply.id, snippet: reply.snippet },
+                videoId: thread.snippet?.videoId,
+              },
+            });
+          }
+        } else {
+          items.push(thread);
+        }
+      }
       setComments(prev => reset ? items : [...prev, ...items]);
       setNextPage(data.nextPageToken || null);
       // Fetch video titles
@@ -871,6 +898,8 @@ const css = `
   .video-link { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-muted); text-decoration: none; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); transition: color 0.2s; }
   .video-link:hover { color: var(--blue); border-color: var(--blue); }
   .video-title-label { font-size: 0.75rem; color: var(--text-muted); margin-top: -6px; }
+  .reply-context { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--text-muted); padding: 4px 8px; background: rgba(255,255,255,0.03); border-radius: 7px; border: 1px solid var(--border); margin-top: -4px; }
+  .reply-context strong { color: #aaa; font-weight: 500; }
   .comment-text { font-size: 0.9rem; line-height: 1.7; color: #ccc; word-break: break-word; }
   .comment-likes { font-size: 0.78rem; color: var(--text-muted); }
   .actions { display: flex; gap: 8px; margin-top: 4px; }
